@@ -11,15 +11,18 @@ ghc-options:
   - -Wwarn=incomplete-uni-patterns
   - -Wwarn=orphans
 dependencies:
+  - HaTeX
   - base
   - containers
   - mtl
   - string-interpolate
+  - text
   - transformers
 library:
   source-dirs: src
   exposed-modules:
     - Control.Monad.Output
+    - Control.Monad.Output.LaTeX
 tests:
   output-monad-test:
     main: Spec.hs
