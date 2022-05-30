@@ -1,0 +1,10 @@
+*.dyn_hi
+*.dyn_o
+*.hi
+*.o
+*.pdf
+*.exe
+*.DS_Store
+.stack-work/
+dist-newstyle/
+stack.yaml.lock
