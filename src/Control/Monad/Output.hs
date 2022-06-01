@@ -1,30 +1,29 @@
 -- | This module provides common skeletons for printing tasks
 module Control.Monad.Output (
-  OutputMonad (..),
-  Rated,
-  enumerate,
-  multipleChoice,
-  printSolutionAndAssert,
-  recoverFrom,
-  recoverWith,
-  singleChoice,
-  singleChoiceSyntax,
+  -- * Report monad
+  Language (..),
   Out (..),
   ReportT (..),
   Report,
-  abortWith,
-  alignOutput,
-  continueOrAbort,
   getAllOuts,
   getOutsWithResult,
+  toOutput,
+  -- * Monad for translations
+  LangM' (LangM, withLang),
+  LangM,
+  Rated,
+  -- * Output monad
+  OutputMonad (..),
+  enumerate,
+  abortWith,
+  alignOutput,
   combineReports,
   combineTwoReports,
   format,
+  recoverFrom,
+  recoverWith,
   toAbort,
-  toOutput,
-  LangM,
-  LangM' (LangM),
-  Language (..),
+  -- * Translation
   english,
   german,
   localise,
@@ -32,7 +31,12 @@ module Control.Monad.Output (
   multiLang,
   translate,
   translations,
-  withLang,
+  -- * Helper functions
+  multipleChoice,
+  printSolutionAndAssert,
+  singleChoice,
+  singleChoiceSyntax,
+  continueOrAbort,
   yesNo,
   ) where
 
@@ -72,7 +76,7 @@ import Data.Maybe                       (fromMaybe, isJust)
 import Data.Ratio                       ((%))
 
 {-|
-If argument is True,
+If argument is 'True',
 it will continue after assertion,
 otherwise it will stop if assertion fails.
 -}
@@ -80,6 +84,11 @@ continueOrAbort :: OutputMonad m => Bool -> Bool -> LangM m -> LangM m
 continueOrAbort True  = yesNo
 continueOrAbort False = assertion
 
+{-|
+In contrast to 'assertion' it will only indicate that a check was performed
+and its result.
+However, it will not abort.
+-}
 yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
 yesNo p q = do
   paragraph q
@@ -232,17 +241,30 @@ enumerate
 enumerate f g m = enumerateM (text . f) (M.toList $ text . g <$> m)
 
 class Monad m => OutputMonad m where
+  -- | for assertions, i.e. expected behaviour is explanation
+  -- (and abortion on 'False')
   assertion  :: Bool -> LangM m -> LangM m
+  -- | for printing a single image from file
   image      :: FilePath -> LangM m
+  -- | for printing multiple images using the given map
   images     :: (k -> String) -> (a -> FilePath) -> Map k a -> LangM m
+  -- | for a complete paragraph
   paragraph  :: LangM m -> LangM m
+  -- | should abort at once
   refuse     :: LangM m -> LangM m
+  -- | for displaying text
   text       :: String -> LangM m
+  -- | for an enumerated sequence of elements
   enumerateM :: (a -> LangM m) -> [(a, LangM m)] -> LangM m
+  -- | for an unenumerated sequence of elements
   itemizeM   :: [LangM m] -> LangM m
+  -- | for indentation
   indent     :: LangM m -> LangM m
+  -- | for LaTeX-Math code (i.e. without surrounding @$@)
   latex      :: String -> LangM m
+  -- | for fixed width fonts (i.e. typewriter style)
   code       :: String -> LangM m
+  -- | for language dependent formatting
   translated :: Map Language String -> LangM m
 
 recoverFrom :: Alternative m => LangM m -> LangM m
