@@ -84,11 +84,6 @@ instance OutputMonad (ReportT LaTeX IO) where
     if p
       then format . TeXEnv "quote" [] $ TeXRaw "Yes."
       else abortWith . TeXEnv "quote" [] $ TeXRaw "No."
-  enumerate f g = format . TeXEnv "enumerate" [] .
-    M.foldrWithKey
-    (\k x -> (TeXComm "item" [OptArg $ TeXRaw $ pack $ f k,
-                              FixArg $ TeXRaw $ pack $ g x] <>))
-    mempty
   image f = format $ par
     <> TeXEnv "centering" [] (TeXComm "includegraphics"
     [OptArg $ TeXRaw "min width=0.4\\textwidth=0.6\\textwidth,min height=0.4\\textwidth=0.6\\textwidth,keepaspectratio,max width=0.9\\textwidth,max height=0.9\\textwidth", FixArg $ TeXRaw $ pack $ transformFile f])

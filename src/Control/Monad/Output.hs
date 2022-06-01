@@ -2,6 +2,7 @@
 module Control.Monad.Output (
   OutputMonad (..),
   Rated,
+  enumerate,
   multipleChoice,
   printSolutionAndAssert,
   recoverFrom,
@@ -222,9 +223,16 @@ instance Monad m => Monad (LangM' m) where
 instance MonadTrans LangM' where
   lift m = LangM $ const m
 
+enumerate
+  :: OutputMonad m
+  => (k -> String)
+  -> (a -> String)
+  -> Map k a
+  -> LangM m
+enumerate f g m = enumerateM (text . f) (M.toList $ text . g <$> m)
+
 class Monad m => OutputMonad m where
   assertion  :: Bool -> LangM m -> LangM m
-  enumerate  :: (k -> String) -> (a -> String) -> Map k a -> LangM m
   image      :: FilePath -> LangM m
   images     :: (k -> String) -> (a -> FilePath) -> Map k a -> LangM m
   paragraph  :: LangM m -> LangM m
@@ -299,7 +307,6 @@ mapLangM f om = LangM $ f . withLang om
 
 instance OutputMonad Maybe where
   assertion b _   = unless b $ lift Nothing
-  enumerate _ _ _ = return ()
   image _         = return ()
   images _ _ _    = return ()
   paragraph xs    = xs
