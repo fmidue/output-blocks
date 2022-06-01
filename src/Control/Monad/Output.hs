@@ -1,6 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE QuasiQuotes #-}
 -- | This module provides common skeletons for printing tasks
 module Control.Monad.Output (
   OutputMonad (..),
@@ -20,7 +17,6 @@ module Control.Monad.Output (
   getAllOuts,
   getOutsWithResult,
   combineReports,
-  combineWithReports,
   combineTwoReports,
   format,
   toAbort,
@@ -39,19 +35,33 @@ module Control.Monad.Output (
   yesNo,
   ) where
 
+import qualified Control.Monad.Report as Report (
+  alignOutput,
+  combineReports,
+  combineTwoReports,
+  toAbort,
+  )
+
 import qualified Data.Map as M
 
+import Control.Monad.Report (
+  Language (..),
+  Out (..),
+  ReportT (..),
+  Report,
+  getAllOuts,
+  getOutsWithResult,
+  toOutput,
+  )
+
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Monad                    (foldM, unless, void, when)
+import Control.Monad                    (foldM, unless, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
-import Control.Monad.Identity           (Identity)
 import Control.Monad.State              (State, execState, modify)
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
+import Control.Monad.Trans.Maybe        (MaybeT (MaybeT))
 import Control.Monad.Writer (
-  MonadWriter (pass, tell),
-  WriterT (WriterT, runWriterT),
-  execWriterT,
+  MonadWriter (tell),
   )
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (for_)
@@ -170,9 +180,6 @@ percentPer :: (Eq a, Ord k) => Map k a -> [(k, a)] -> Rational
 percentPer xs = (% toInteger (length xs)) . sum
   . fmap (\(k, y) -> if M.lookup k xs == Just y then 1 else 0)
 
-data Language = English | German
-  deriving (Enum, Eq, Ord)
-
 multiLang :: OutputMonad m => [(Language, String)] -> LangM m
 multiLang = translated . M.fromList
 
@@ -230,37 +237,11 @@ class Monad m => OutputMonad m where
   code       :: String -> LangM m
   translated :: Map Language String -> LangM m
 
-data Out o =
-  Abort |
-  Format o |
-  Localised (Map Language String)
-
-newtype ReportT o m r = Report { unReport :: MaybeT (WriterT [Out o] m) r }
-  deriving newtype (Alternative, Applicative, Functor, Monad, MonadIO)
-
-instance MonadTrans (ReportT o) where
-  lift m = Report $ MaybeT $ WriterT $ fmap (\x -> (Just x, [])) m
-
-type Report o r = ReportT o Identity r
-
 recoverFrom :: Alternative m => LangM m -> LangM m
 recoverFrom x = LangM $ \l -> (x `withLang` l) <|> pure ()
 
 recoverWith :: Alternative m => a -> LangM' m b -> LangM' m (Either a b)
 recoverWith x m = LangM $ \l -> (Right <$> (m `withLang` l)) <|> pure (Left x)
-
-getOutsWithResult :: Monad m => ReportT o m a -> m (Maybe a, [Out o])
-getOutsWithResult = runWriterT . getAllOuts'
-
-getAllOuts :: Monad m => ReportT o m a -> m [Out o]
-getAllOuts = execWriterT . getAllOuts'
-
-getAllOuts' :: Monad m => ReportT o m a -> WriterT [Out o] m (Maybe a)
-getAllOuts' r = do
-  x <- runMaybeT $ unReport r
-  case x of
-    Nothing -> pass $ return (x, (Abort:))
-    Just _ -> return x
 
 combineLangMs :: ([m a] -> m b) -> [LangM' m a] -> LangM' m b
 combineLangMs f oms = LangM $ \l ->
@@ -279,27 +260,7 @@ combineReports
   -> ([[o]] -> o)
   -> [LangM' (ReportT o m) a]
   -> LangM' (ReportT o m) ()
-combineReports l = combineLangMs . combineReports' l
-
-combineReports'
-  :: Monad m
-  => (Map Language String -> o)
-  -> ([[o]] -> o)
-  -> [ReportT o m a]
-  -> ReportT o m ()
-combineReports' l f rs = Report $ do
-  rs' <- lift . lift $ getAllOuts `mapM` rs
-  os <- MaybeT . return $ mapM (toOutput l) `mapM` rs'
-  tell . (:[]) . Format $ f os
-
-combineWithReports
-  :: Monad m
-  => (Map Language String -> o)
-  -> ([b] -> o)
-  -> ([o] -> b)
-  -> [LangM' (ReportT o m) a]
-  -> LangM' (ReportT o m) ()
-combineWithReports l f g = combineLangMs $ combineReports' l (f . fmap g)
+combineReports l = combineLangMs . Report.combineReports l
 
 alignOutput
   :: Monad m
@@ -307,26 +268,7 @@ alignOutput
   -> ([o] -> o)
   -> LangM' (ReportT o m) a
   -> LangM' (ReportT o m) ()
-alignOutput l = mapLangM . alignOutput' l
-
-alignOutput'
-  :: Monad m
-  => (Map Language String -> o)
-  -> ([o] -> o)
-  -> ReportT o m a
-  -> ReportT o m ()
-alignOutput' l f r = Report $ do
-  r' <- lift . lift . getAllOuts $ r
-  xs  <- MaybeT . return $ toOutput l `mapM` r'
-  tell . (:[]) . Format $ f xs
-
-toOutput
-  :: (Map Language String -> o)
-  -> Out o
-  -> Maybe o
-toOutput _ Abort         = Nothing
-toOutput _ (Format x)    = Just x
-toOutput f (Localised x) = Just $ f x
+alignOutput l = mapLangM . Report.alignOutput l
 
 combineTwoReports
   :: Monad m
@@ -335,20 +277,7 @@ combineTwoReports
   -> LangM' (ReportT o m) a
   -> LangM' (ReportT o m) b
   -> LangM' (ReportT o m) ()
-combineTwoReports l = combineLangM . combineTwoReports' l
-
-combineTwoReports'
-  :: Monad m
-  => (Map Language String -> o)
-  -> ([o] -> [o] -> o)
-  -> ReportT o m a
-  -> ReportT o m b
-  -> ReportT o m ()
-combineTwoReports' l f r1 r2 = do
-  r1' <- lift $ getAllOuts r1
-  case toOutput l `mapM` r1' of
-    Nothing -> void r1
-    Just x  -> alignOutput' l (f x) r2
+combineTwoReports l = combineLangM . Report.combineTwoReports l
 
 format :: Monad m => o -> LangM' (ReportT o m) ()
 format = lift . Report . tell . (:[]) . Format
@@ -363,11 +292,7 @@ toAbort
   => (Map Language String -> o)
   -> LangM' (ReportT o m) a
   -> LangM' (ReportT o m) b
-toAbort l = mapLangM $ \r -> Report $ do
-  r' <- lift . lift $ getAllOuts r
-  xs  <- MaybeT . return $ toOutput l `mapM` r'
-  tell $ Format <$> xs
-  MaybeT $ return Nothing
+toAbort l = mapLangM $ Report.toAbort l
 
 mapLangM :: (m a -> m b) -> LangM' m a -> LangM' m b
 mapLangM f om = LangM $ f . withLang om

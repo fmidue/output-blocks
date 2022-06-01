@@ -13,6 +13,7 @@ library
       Control.Monad.Output
       Control.Monad.Output.LaTeX
   other-modules:
+      Control.Monad.Report
       Paths_output_monad
   hs-source-dirs:
       src
