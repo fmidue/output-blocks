@@ -11,7 +11,6 @@ build-type:     Simple
 library
   exposed-modules:
       Control.Monad.Output
-      Control.Monad.Output.LaTeX
   other-modules:
       Control.Monad.Report
       Paths_output_monad
@@ -19,11 +18,9 @@ library
       src
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-depends:
-      HaTeX
-    , base
+      base
     , containers
     , mtl
-    , text
     , transformers
   default-language: Haskell2010
 
@@ -36,12 +33,10 @@ test-suite output-monad-test
       test
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      HaTeX
-    , base
+      base
     , containers
     , hspec
     , mtl
     , output-monad
-    , text
     , transformers
   default-language: Haskell2010

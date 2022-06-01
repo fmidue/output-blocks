@@ -1,0 +1,33 @@
+name: output-monad
+extra-source-files: []
+build-tools: []
+ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Widentities
+  - -Wredundant-constraints
+  - -Werror
+  - -Wwarn=incomplete-uni-patterns
+  - -Wwarn=orphans
+dependencies:
+  - base
+  - containers
+  - mtl
+  - transformers
+library:
+  source-dirs: src
+  exposed-modules:
+    - Control.Monad.Output
+tests:
+  output-monad-test:
+    main: Spec.hs
+    source-dirs:
+    - test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - output-monad
+    - hspec
