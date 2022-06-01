@@ -16,7 +16,8 @@ module Control.Monad.Output (
   singleChoice,
   singleChoiceSyntax,
   Out (..),
-  Report (..),
+  ReportT (..),
+  Report,
   abortWith,
   alignOutput,
   continueOrAbort,
@@ -47,14 +48,14 @@ import qualified Data.Map as M
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Monad                    (foldM, unless, void, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Identity           (Identity)
 import Control.Monad.State              (State, execState, modify)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (
   MonadWriter (pass, tell),
-  Writer,
-  execWriter,
-  runWriter,
+  WriterT (WriterT, runWriterT),
+  execWriterT,
   )
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (for_)
@@ -264,12 +265,13 @@ data Out o =
   Format o |
   Localised (Map Language String)
 
-newtype Report o r = Report { unReport :: MaybeT (Writer [Out o]) r }
-  deriving newtype (Alternative, Applicative, Functor)
+newtype ReportT o m r = Report { unReport :: MaybeT (WriterT [Out o] m) r }
+  deriving newtype (Alternative, Applicative, Functor, Monad, MonadIO)
 
-instance Monad (Report o) where
-  return = Report . return
-  Report r >>= f = Report $ r >>= unReport . f
+instance MonadTrans (ReportT o) where
+  lift m = Report $ MaybeT $ WriterT $ fmap (\x -> (Just x, [])) m
+
+type Report o r = ReportT o Identity r
 
 recoverFrom :: Alternative m => LangM m -> LangM m
 recoverFrom x = LangM $ \l -> (x `withLang` l) <|> pure ()
@@ -277,13 +279,13 @@ recoverFrom x = LangM $ \l -> (x `withLang` l) <|> pure ()
 recoverWith :: Alternative m => a -> LangM' m b -> LangM' m (Either a b)
 recoverWith x m = LangM $ \l -> (Right <$> (m `withLang` l)) <|> pure (Left x)
 
-getOutsWithResult :: Report o a -> (Maybe a, [Out o])
-getOutsWithResult = runWriter . getAllOuts'
+getOutsWithResult :: Monad m => ReportT o m a -> m (Maybe a, [Out o])
+getOutsWithResult = runWriterT . getAllOuts'
 
-getAllOuts :: Report o a -> [Out o]
-getAllOuts = execWriter . getAllOuts'
+getAllOuts :: Monad m => ReportT o m a -> m [Out o]
+getAllOuts = execWriterT . getAllOuts'
 
-getAllOuts' :: Report o a -> Writer [Out o] (Maybe a)
+getAllOuts' :: Monad m => ReportT o m a -> WriterT [Out o] m (Maybe a)
 getAllOuts' r = do
   x <- runMaybeT $ unReport r
   case x of
@@ -302,45 +304,50 @@ combineLangM f x y = LangM $ \l ->
   in f x' y'
 
 combineReports
-  :: (Map Language String -> o)
+  :: Monad m
+  => (Map Language String -> o)
   -> ([[o]] -> o)
-  -> [LangM' (Report o) a]
-  -> LangM' (Report o) ()
+  -> [LangM' (ReportT o m) a]
+  -> LangM' (ReportT o m) ()
 combineReports l = combineLangMs . combineReports' l
 
 combineReports'
-  :: (Map Language String -> o)
+  :: Monad m
+  => (Map Language String -> o)
   -> ([[o]] -> o)
-  -> [Report o a]
-  -> Report o ()
+  -> [ReportT o m a]
+  -> ReportT o m ()
 combineReports' l f rs = Report $ do
-  os <- sequence $ toOut <$> rs
+  rs' <- lift . lift $ getAllOuts `mapM` rs
+  os <- MaybeT . return $ mapM (toOutput l) `mapM` rs'
   tell . (:[]) . Format $ f os
-  where
-    toOut r = MaybeT . return . sequence $ toOutput l <$> getAllOuts r
 
 combineWithReports
-  :: (Map Language String -> o)
+  :: Monad m
+  => (Map Language String -> o)
   -> ([b] -> o)
   -> ([o] -> b)
-  -> [LangM' (Report o) a]
-  -> LangM' (Report o) ()
+  -> [LangM' (ReportT o m) a]
+  -> LangM' (ReportT o m) ()
 combineWithReports l f g = combineLangMs $ combineReports' l (f . fmap g)
 
 alignOutput
-  :: (Map Language String -> o)
+  :: Monad m
+  => (Map Language String -> o)
   -> ([o] -> o)
-  -> LangM' (Report o) a
-  -> LangM' (Report o) ()
+  -> LangM' (ReportT o m) a
+  -> LangM' (ReportT o m) ()
 alignOutput l = mapLangM . alignOutput' l
 
 alignOutput'
-  :: (Map Language String -> o)
+  :: Monad m
+  => (Map Language String -> o)
   -> ([o] -> o)
-  -> Report o a
-  -> Report o ()
+  -> ReportT o m a
+  -> ReportT o m ()
 alignOutput' l f r = Report $ do
-  xs  <- MaybeT . return . sequence $ toOutput l <$> getAllOuts r
+  r' <- lift . lift . getAllOuts $ r
+  xs  <- MaybeT . return $ toOutput l `mapM` r'
   tell . (:[]) . Format $ f xs
 
 toOutput
@@ -352,37 +359,43 @@ toOutput _ (Format x)    = Just x
 toOutput f (Localised x) = Just $ f x
 
 combineTwoReports
-  :: (Map Language String -> o)
+  :: Monad m
+  => (Map Language String -> o)
   -> ([o] -> [o] -> o)
-  -> LangM' (Report o) a
-  -> LangM' (Report o) b
-  -> LangM' (Report o) ()
+  -> LangM' (ReportT o m) a
+  -> LangM' (ReportT o m) b
+  -> LangM' (ReportT o m) ()
 combineTwoReports l = combineLangM . combineTwoReports' l
 
 combineTwoReports'
-  :: (Map Language String -> o)
+  :: Monad m
+  => (Map Language String -> o)
   -> ([o] -> [o] -> o)
-  -> Report o a
-  -> Report o b
-  -> Report o ()
-combineTwoReports' l f r1 r2 = case sequence $ toOutput l <$> getAllOuts r1 of
-  Nothing -> void r1
-  Just x  -> alignOutput' l (f x) r2
+  -> ReportT o m a
+  -> ReportT o m b
+  -> ReportT o m ()
+combineTwoReports' l f r1 r2 = do
+  r1' <- lift $ getAllOuts r1
+  case toOutput l `mapM` r1' of
+    Nothing -> void r1
+    Just x  -> alignOutput' l (f x) r2
 
-format :: o -> LangM' (Report o) ()
+format :: Monad m => o -> LangM' (ReportT o m) ()
 format = lift . Report . tell . (:[]) . Format
 
-abortWith :: o -> LangM' (Report o) b
+abortWith :: Monad m => o -> LangM' (ReportT o m) b
 abortWith d = do
   format d
   lift $ Report $ MaybeT (return Nothing)
 
 toAbort
-  :: (Map Language String -> o)
-  -> LangM' (Report o) a
-  -> LangM' (Report o) b
+  :: Monad m
+  => (Map Language String -> o)
+  -> LangM' (ReportT o m) a
+  -> LangM' (ReportT o m) b
 toAbort l = mapLangM $ \r -> Report $ do
-  xs  <- MaybeT . return . sequence $ toOutput l <$> getAllOuts r
+  r' <- lift . lift $ getAllOuts r
+  xs  <- MaybeT . return $ toOutput l `mapM` r'
   tell $ Format <$> xs
   MaybeT $ return Nothing
 
