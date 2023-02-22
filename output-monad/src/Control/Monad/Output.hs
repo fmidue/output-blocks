@@ -60,6 +60,8 @@ import Control.Monad.Report (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
+import Control.Exception                (throwIO)
+import Control.Exception.Base           (Exception)
 import Control.Monad                    (foldM, unless, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.State              (State, execState, modify)
@@ -71,7 +73,7 @@ import Control.Monad.Writer (
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (for_)
 import Data.List                        (sort)
-import Data.Map                         (Map)
+import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
 import Data.Ratio                       ((%))
 
@@ -340,3 +342,34 @@ instance OutputMonad Maybe where
   latex _         = return ()
   code _          = return ()
   translated _    = return ()
+
+data OutputException = Refused | AssertionFailed deriving Show
+instance Exception OutputException
+
+instance OutputMonad IO where
+  assertion b m = unless b $ m >> lift (putStrLn "" >> throwIO AssertionFailed)
+  image         = lift . putStr . ("file: " ++)
+  images g f    = lift . putStrLn . foldrWithKey
+    (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
+    ""
+  paragraph     = (>> lift (putStrLn ""))
+  text          = lift . putStr
+  enumerateM p  = foldl
+    (\o (x, e) -> paragraph $ do o; p x; lift $ putStr "  "; e)
+    (return ())
+  itemizeM      = foldl
+    (\o x -> paragraph $ do o; lift $ putStr " -  "; x)
+    (return ())
+  indent xs     = do
+    lift $ putStr ">>>>"
+    xs
+    lift $ putStrLn "<<<<"
+  refuse xs     = do
+    xs
+    indent $ text "No"
+    lift $ throwIO Refused
+  latex         = lift . putStrLn . ("LaTeX: " ++)
+  code          = lift . putStr . (\xs -> " <" ++ xs ++ "> ")
+  translated lm = do
+    l <- LangM return
+    text . fromMaybe "" $ M.lookup l lm
