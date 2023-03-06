@@ -15,6 +15,7 @@ dependencies:
   - containers
   - mtl
   - transformers
+  - exceptions
 library:
   source-dirs: src
   exposed-modules:

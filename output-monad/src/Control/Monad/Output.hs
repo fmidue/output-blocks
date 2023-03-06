@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- | This module provides common skeletons for printing tasks
 module Control.Monad.Output (
   -- * Report monad
@@ -23,6 +25,9 @@ module Control.Monad.Output (
   recoverFrom,
   recoverWith,
   toAbort,
+  -- * Isolated OutputMonad
+  IsolatedOutput (..),
+  runIsolated,
   -- * Translation
   english,
   german,
@@ -61,7 +66,7 @@ import Control.Monad.Report (
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Exception                (throwIO)
-import Control.Exception.Base           (Exception)
+import Control.Exception.Base           (Exception, displayException)
 import Control.Monad                    (foldM, unless, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.State              (State, execState, modify)
@@ -70,6 +75,7 @@ import Control.Monad.Trans.Maybe        (MaybeT (MaybeT))
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
+import Control.Monad.Catch              (MonadCatch(catch))
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (for_)
 import Data.List                        (sort)
@@ -373,3 +379,12 @@ instance OutputMonad IO where
   translated lm = do
     l <- LangM return
     text . fromMaybe "" $ M.lookup l lm
+
+newtype IsolatedOutput m a = IsolatedOutput { runOutput :: m a }
+  deriving (Functor,Applicative,Monad,OutputMonad)
+
+runIsolated :: forall m. (MonadIO m, MonadCatch m) => IsolatedOutput m () -> m ()
+runIsolated = flip catch handleExeption . runOutput
+  where
+    handleExeption :: OutputException -> m ()
+    handleExeption = liftIO . (putStrLn . displayException)
