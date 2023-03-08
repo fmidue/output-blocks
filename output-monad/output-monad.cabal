@@ -13,7 +13,6 @@ library
       Control.Monad.Output
   other-modules:
       Control.Monad.Report
-      Test
       Paths_output_monad
   hs-source-dirs:
       src
