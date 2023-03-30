@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | This module provides common skeletons for printing tasks
@@ -67,7 +68,7 @@ import Control.Monad.Report (
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Exception                (throwIO)
 import Control.Exception.Base           (Exception, displayException)
-import Control.Monad                    (foldM, unless, when)
+import Control.Monad                    (unless, when)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.State              (State, execState, modify)
 import Control.Monad.Trans              (MonadTrans (lift))
@@ -77,7 +78,7 @@ import Control.Monad.Writer (
   )
 import Control.Monad.Catch              (MonadCatch(catch))
 import Data.Containers.ListUtils        (nubOrd)
-import Data.Foldable                    (for_)
+import Data.Foldable                    (for_, sequenceA_, traverse_)
 import Data.List                        (sort)
 import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
@@ -108,6 +109,7 @@ yesNo p q = do
       else do
         english "No."
         german "Nein."
+  pure ()
 
 localised :: (String -> LangM' m a) -> Map Language String -> LangM' m a
 localised f ts = LangM $ \l ->
@@ -121,38 +123,45 @@ multipleChoice
   -> Map a Bool
   -> [a]
   -> Rated m
-multipleChoice what msolutionString solution choices = do
-  let cs = sort $ nubOrd choices
-      points = percentPer
-        solution
-        (toMapping (M.keys solution) cs)
-      isCorrect = null [c | c <- cs, c `notElem` valid]
-  yesNo isCorrect $ multiLang [
-    (English, "Given " ++ localise English what ++ " are correct?"),
-    (German, "Die angegebenen " ++ localise German what ++ " sind korrekt?")
-    ]
-  when isCorrect $ yesNo (cs ==  valid) $ multiLang [
-    (English, "Given " ++ localise English what ++ " are exhaustive?"),
-    (German, "Die angegebenen " ++ localise German what ++ " sind vollständig?")
-    ]
-  printSolutionAndAssert msolutionString points
+multipleChoice what msolutionString solution choices =
+  correctnessCheck
+  *> exhaustivenessCheck
+  *> printSolutionAndAssert msolutionString points
   where
-    valid = M.keys $ M.filter (== True) solution
+    cs = sort $ nubOrd choices
+    points = percentPer
+      solution
+      (toMapping (M.keys solution) cs)
+    isCorrect = null [c | c <- cs, c `notElem` valid]
+    correctnessCheck = yesNo isCorrect $ multiLang [
+      (English, "Given " ++ localise English what ++ " are correct?"),
+      (German, "Die angegebenen " ++ localise German what ++ " sind korrekt?")
+      ]
+    exhaustivenessCheck =  when isCorrect $ yesNo (cs ==  valid) $ multiLang [
+      (English, "Given " ++ localise English what ++ " are exhaustive?"),
+      (German, "Die angegebenen " ++ localise German what ++ " sind vollständig?")
+      ]
+    valid = M.keys $ M.filter id solution
 
 printSolutionAndAssert
   :: OutputMonad m
   => Maybe String
   -> Rational
   -> Rated m
-printSolutionAndAssert msolutionString points = do
-  for_ msolutionString $ \solutionString ->
+printSolutionAndAssert msolutionString points =
+  for_ msolutionString (\solutionString ->
     when (points /= 1) $ paragraph $ do
       translate $ do
         english "The correct solution is:"
         german "Die richtige Lösung ist:"
       code solutionString
-  unless (points >= 1 % 2) $ refuse $ return ()
-  return points
+      pure ()
+    )
+  *> if points >= 1 % 2
+    then pure (Just points)
+    else do
+      refuse $ pure ()
+      pure Nothing
 
 singleChoiceSyntax
   :: (OutputMonad m, Eq a, Show a)
@@ -160,9 +169,9 @@ singleChoiceSyntax
   -> [a]
   -> a
   -> LangM m
-singleChoiceSyntax withSolution options choice = do
+singleChoiceSyntax withSolution options choice =
   let assert = continueOrAbort withSolution
-  assert (choice `elem` options) $ translate $ do
+  in assert (choice `elem` options) $ translate $ do
     let c = show choice
     english $ "Chosen option " ++ c  ++ " is available?"
     german $ "Gewählte Option " ++ c ++ " ist verfügbar?"
@@ -175,13 +184,15 @@ singleChoice
   -> a
   -> Rated m
 singleChoice what msolutionString solution choice = do
-  let correct = solution == choice
-      points = if correct then 1 else 0
-      assert = continueOrAbort $ isJust msolutionString
-  assert correct $ multiLang [
-    (English, "Chosen " ++ localise English what ++ " is correct?"),
-    (German, "Der/die/das gewählte " ++ localise German what ++ " ist korrekt?")]
-  printSolutionAndAssert msolutionString points
+  checkCorrect
+  *> printSolutionAndAssert msolutionString points
+  where
+    correct = solution == choice
+    points = if correct then 1 else 0
+    assert = continueOrAbort $ isJust msolutionString
+    checkCorrect = assert correct $ multiLang [
+      (English, "Chosen " ++ localise English what ++ " is correct?"),
+      (German, "Der/die/das gewählte " ++ localise German what ++ " ist korrekt?")]
 
 {-|
 Returns a list stating for each element of the first list
@@ -222,10 +233,7 @@ german = modify . M.insertWith (flip (++)) German
 
 newtype LangM' m a = LangM { withLang :: Language -> m a}
 type LangM m = LangM' m ()
-type Rated m = LangM' m Rational
-
-instance MonadIO m => MonadIO (LangM' m) where
-  liftIO = LangM . const . liftIO
+type Rated m = LangM' m (Maybe Rational)
 
 instance Functor m => Functor (LangM' m) where
   fmap f (LangM o) = LangM $ fmap f . o
@@ -233,9 +241,6 @@ instance Functor m => Functor (LangM' m) where
 instance Applicative m => Applicative (LangM' m) where
   pure x = LangM . const $ pure x
   LangM f <*> LangM x = LangM $ \l -> f l <*> x l
-
-instance Monad m => Monad (LangM' m) where
-  LangM x >>= f = LangM $ \l -> x l >>= (\x' -> withLang (f x') l)
 
 instance MonadTrans LangM' where
   lift m = LangM $ const m
@@ -321,9 +326,9 @@ format :: Monad m => o -> LangM' (ReportT o m) ()
 format = lift . Report . tell . (:[]) . Format
 
 abortWith :: Monad m => o -> LangM' (ReportT o m) b
-abortWith d = do
-  format d
-  lift $ Report $ MaybeT (return Nothing)
+abortWith d = (*>)
+  (format d)
+  $ lift $ Report $ MaybeT (return Nothing)
 
 toAbort
   :: Monad m
@@ -337,48 +342,49 @@ mapLangM f om = LangM $ f . withLang om
 
 instance OutputMonad Maybe where
   assertion b _   = unless b $ lift Nothing
-  image _         = return ()
-  images _ _ _    = return ()
+  image _         = pure ()
+  images _ _ _    = pure ()
   paragraph xs    = xs
-  refuse xs       = xs >> lift Nothing
-  text _          = return ()
-  enumerateM f xs = (\(x, y) -> f x >> y) `mapM_` xs
-  itemizeM        = foldM ((>>) . return) ()
+  refuse xs       = xs *> lift Nothing
+  text _          = pure ()
+  enumerateM f xs = (\(x, y) -> f x *> y) `traverse_` xs
+  itemizeM        = sequenceA_
   indent xs       = xs
-  latex _         = return ()
-  code _          = return ()
-  translated _    = return ()
+  latex _         = pure ()
+  code _          = pure ()
+  translated _    = pure ()
 
 data OutputException = Refused | AssertionFailed deriving Show
 instance Exception OutputException
 
 instance OutputMonad IO where
-  assertion b m = unless b $ m >> lift (putStrLn "" >> throwIO AssertionFailed)
+  assertion b m = unless b $ m *> lift (putStrLn "" >> throwIO AssertionFailed)
   image         = lift . putStr . ("file: " ++)
   images g f    = lift . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
     ""
-  paragraph     = (>> lift (putStrLn ""))
+  paragraph     = (*> lift (putStrLn ""))
   text          = lift . putStr
   enumerateM p  = foldl
-    (\o (x, e) -> paragraph $ do o; p x; lift $ putStr "  "; e)
-    (return ())
+    (\o (x, e) -> paragraph $ do o; p x; lift $ putStr "  "; e; pure ())
+    (pure ())
   itemizeM      = foldl
-    (\o x -> paragraph $ do o; lift $ putStr " -  "; x)
-    (return ())
+    (\o x -> paragraph $ do o; lift $ putStr " -  "; x; pure ())
+    (pure ())
   indent xs     = do
     lift $ putStr ">>>>"
     xs
     lift $ putStrLn "<<<<"
+    pure ()
   refuse xs     = do
     xs
     indent $ text "No"
     lift $ throwIO Refused
+    pure ()
   latex         = lift . putStrLn . ("LaTeX: " ++)
   code          = lift . putStr . (\xs -> " <" ++ xs ++ "> ")
-  translated lm = do
-    l <- LangM return
-    text . fromMaybe "" $ M.lookup l lm
+  translated lm = LangM $ \l ->
+    (text . fromMaybe "" $ M.lookup l lm) `withLang` l
 
 newtype IsolatedOutput m a = IsolatedOutput { runOutput :: m a }
   deriving (Functor,Applicative,Monad,OutputMonad)

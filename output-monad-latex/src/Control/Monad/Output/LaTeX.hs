@@ -79,8 +79,7 @@ transformFile "svg"  = "pdf"
 transformFile (x:xs) = x:transformFile xs
 
 instance OutputMonad (ReportT LaTeX IO) where
-  assertion p o = do
-    o
+  assertion p o = o *>
     if p
       then format . TeXEnv "quote" [] $ TeXRaw "Yes."
       else abortWith . TeXEnv "quote" [] $ TeXRaw "No."
@@ -107,7 +106,7 @@ instance OutputMonad (ReportT LaTeX IO) where
     mempty
   paragraph = alignOutputL ((<> par) . mconcat)
   text = format . TeXRaw . pack . (\xs -> ' ':xs ++ " ")
-  refuse xs = xs >> abortWith mempty
+  refuse xs = xs *> abortWith mempty
   indent = alignOutputL (TeXEnv "quote" [] . mconcat)
   enumerateM f xs = LangM $ \l -> Report $ do
     let xs' = bimap ((`withLang` l) . f) (`withLang` l) <$> xs
@@ -123,7 +122,7 @@ instance OutputMonad (ReportT LaTeX IO) where
         os <- lift $ lift $ getAllOuts r
         MaybeT . return . sequence $ toOutputL l <$> os
   itemizeM = alignOutputL
-    (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty) . sequence
+    (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty) . sequenceA
   latex = format . TeXRaw . pack . ('$':) . (++ "$")
   code = format . TeXEnv "verbatim" [] . TeXRaw . pack
   translated lm = LangM $ \l -> Report . tell . (:[]) . Format  $ withL l lm
