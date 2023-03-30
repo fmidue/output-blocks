@@ -215,10 +215,10 @@ translations :: State (Map k a1) a2 -> Map k a1
 translations = flip execState M.empty
 
 english :: String -> State (Map Language String) ()
-english = modify . M.insert English
+english = modify . M.insertWith (flip (++)) English
 
 german :: String -> State (Map Language String) ()
-german = modify . M.insert German
+german = modify . M.insertWith (flip (++)) German
 
 newtype LangM' m a = LangM { withLang :: Language -> m a}
 type LangM m = LangM' m ()
