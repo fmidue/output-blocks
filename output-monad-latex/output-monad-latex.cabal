@@ -30,6 +30,7 @@ test-suite output-monad-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Control.Monad.Output.LaTeXSpec
       Paths_output_monad_latex
   hs-source-dirs:
       test
