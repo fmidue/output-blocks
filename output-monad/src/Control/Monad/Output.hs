@@ -1,22 +1,32 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
+{-# OPTIONS_GHC -Wwarn=star-is-type #-}
 -- | This module provides common skeletons for printing tasks
 module Control.Monad.Output (
   -- * Report monad
+  GenericOut (..),
+  GenericReportT (..),
   Language (..),
-  Out (..),
-  ReportT (..),
+  Out,
+  ReportT,
   Report,
   getAllOuts,
   getOutsWithResult,
   toOutput,
   -- * Monad for translations
-  LangM' (LangM, withLang),
+  GenericLangM (LangM, unLangM),
+  LangM',
   LangM,
   Rated,
   -- * Output monad
-  OutputMonad (..),
+  GenericOutputMonad (..),
+  OutputMonad,
   enumerate,
   abortWith,
   alignOutput,
@@ -56,9 +66,11 @@ import qualified Control.Monad.Report as Report (
 import qualified Data.Map as M
 
 import Control.Monad.Report (
+  GenericOut (..),
+  GenericReportT (..),
   Language (..),
-  Out (..),
-  ReportT (..),
+  Out,
+  ReportT,
   Report,
   getAllOuts,
   getOutsWithResult,
@@ -101,7 +113,7 @@ However, it will not abort.
 yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
 yesNo p q = do
   paragraph q
-  paragraph $ indent $ localised code $ translations $
+  paragraph $ indent $ localised_ code $ translations $
       if p
       then do
         english "Yes."
@@ -110,11 +122,6 @@ yesNo p q = do
         english "No."
         german "Nein."
   pure ()
-
-localised :: (String -> LangM' m a) -> Map Language String -> LangM' m a
-localised f ts = LangM $ \l ->
-  let t = localise l ts
-  in f t `withLang` l
 
 multipleChoice
   :: (OutputMonad m, Ord a)
@@ -231,19 +238,17 @@ english = modify . M.insertWith (flip (++)) English
 german :: String -> State (Map Language String) ()
 german = modify . M.insertWith (flip (++)) German
 
-newtype LangM' m a = LangM { withLang :: Language -> m a}
+newtype GenericLangM m a = LangM { unLangM :: m a }
+  deriving (Applicative, Functor)
+
 type LangM m = LangM' m ()
 type Rated m = LangM' m (Maybe Rational)
 
-instance Functor m => Functor (LangM' m) where
-  fmap f (LangM o) = LangM $ fmap f . o
+type LangLM l m a = GenericLangM (LanguageMonad l m) a
+type LangM' m a = LangLM Language m a
 
-instance Applicative m => Applicative (LangM' m) where
-  pure x = LangM . const $ pure x
-  LangM f <*> LangM x = LangM $ \l -> f l <*> x l
-
-instance MonadTrans LangM' where
-  lift m = LangM $ const m
+instance MonadTrans GenericLangM where
+  lift = LangM
 
 enumerate
   :: OutputMonad m
@@ -253,94 +258,136 @@ enumerate
   -> LangM m
 enumerate f g m = enumerateM (text . f) (M.toList $ text . g <$> m)
 
-class Monad m => OutputMonad m where
+class GenericOutputMonad Language m => OutputMonad m where
+
+class (Ord l, Monad m, Monad (LanguageMonad l m)) => GenericOutputMonad l m where
+  -- | the monad handling multilingual input
+  type LanguageMonad l m = (lm :: * -> *) | lm -> m l
+  type Output l m
+  type Result l m a
   -- | for assertions, i.e. expected behaviour is explanation
   -- (and abortion on 'False')
-  assertion  :: Bool -> LangM m -> LangM m
+  assertion  :: Bool -> LangLM l m () -> LangLM l m ()
   -- | for printing a single image from file
-  image      :: FilePath -> LangM m
+  image      :: FilePath -> LangLM l m ()
   -- | for printing multiple images using the given map
-  images     :: (k -> String) -> (a -> FilePath) -> Map k a -> LangM m
+  images     :: (k -> String) -> (a -> FilePath) -> Map k a -> LangLM l m ()
   -- | for a complete paragraph
-  paragraph  :: LangM m -> LangM m
+  paragraph  :: LangLM l m () -> LangLM l m ()
   -- | should abort at once
-  refuse     :: LangM m -> LangM m
+  refuse     :: LangLM l m () -> LangLM l m ()
   -- | for displaying text
-  text       :: String -> LangM m
+  text       :: String -> LangLM l m ()
   -- | for an enumerated sequence of elements
-  enumerateM :: (a -> LangM m) -> [(a, LangM m)] -> LangM m
+  enumerateM :: (a -> LangLM l m ()) -> [(a, LangLM l m ())] -> LangLM l m ()
   -- | for an unenumerated sequence of elements
-  itemizeM   :: [LangM m] -> LangM m
+  itemizeM   :: [LangLM l m ()] -> LangLM l m ()
   -- | for indentation
-  indent     :: LangM m -> LangM m
+  indent     :: LangLM l m () -> LangLM l m ()
   -- | for LaTeX-Math code (i.e. without surrounding @$@)
-  latex      :: String -> LangM m
+  latex      :: String -> LangLM l m ()
   -- | for fixed width fonts (i.e. typewriter style)
-  code       :: String -> LangM m
+  code       :: String -> LangLM l m ()
   -- | for language dependent formatting
-  translated :: Map Language String -> LangM m
+  translated :: Map l String -> LangLM l m ()
+  runLangM :: LangLM l m a -> m (Result l m a, Map l (Output l m))
+  localised
+    :: (String -> LangLM l m a)
+    -> Map l String
+    -> LangLM l m (Map l a)
+  localised = defaultLocalised
+  localised_
+    :: (String -> LangLM l m a)
+    -> Map l String
+    -> LangLM l m ()
+  localised_ = traverse_
 
-recoverFrom :: Alternative m => LangM m -> LangM m
-recoverFrom x = LangM $ \l -> (x `withLang` l) <|> pure ()
+defaultLocalised
+  :: (Eq l, Monad m)
+  => (String -> GenericLangM m a)
+  -> Map l String
+  -> GenericLangM m (Map l a)
+defaultLocalised f ts = do
+  let (keys, vals) = unzip $ M.toAscList ts
+  vals' <- traverse f vals
+  return $ M.fromAscList $ zip keys vals'
 
-recoverWith :: Alternative m => a -> LangM' m b -> LangM' m (Either a b)
-recoverWith x m = LangM $ \l -> (Right <$> (m `withLang` l)) <|> pure (Left x)
+recoverFrom
+  :: Alternative (LanguageMonad l m)
+  => GenericLangM (LanguageMonad l m) ()
+  -> GenericLangM (LanguageMonad l m) ()
+recoverFrom x = LangM $ unLangM x <|> pure ()
 
-combineLangMs :: ([m a] -> m b) -> [LangM' m a] -> LangM' m b
-combineLangMs f oms = LangM $ \l ->
-  let rs = (`withLang` l) <$> oms
-  in f rs
+recoverWith
+  :: Alternative (LanguageMonad Language m)
+  => a
+  -> LangM' m b
+  -> LangM' m (Either a b)
+recoverWith x m = LangM $ (Right <$> unLangM m) <|> pure (Left x)
 
-combineLangM :: (m a -> m b -> m c) -> LangM' m a -> LangM' m b -> LangM' m c
-combineLangM f x y = LangM $ \l ->
-  let x' = x `withLang` l
-      y' = y `withLang` l
-  in f x' y'
+combineLangMs
+  :: ([GenericReportT l o m a] -> GenericReportT l o m b)
+  -> [GenericLangM (GenericReportT l o m) a]
+  -> GenericLangM (GenericReportT l o m) b
+combineLangMs f oms = LangM $ f $ map unLangM oms
+
+combineLangM
+  :: (GenericReportT l o m a -> GenericReportT l o m b -> GenericReportT l o m c)
+  -> GenericLangM (GenericReportT l o m) a
+  -> GenericLangM (GenericReportT l o m) b
+  -> GenericLangM (GenericReportT l o m) c
+combineLangM f x y = LangM $ f (unLangM x) (unLangM y)
 
 combineReports
   :: Monad m
-  => (Map Language String -> o)
+  => (Map l String -> o)
   -> ([[o]] -> o)
-  -> [LangM' (ReportT o m) a]
-  -> LangM' (ReportT o m) ()
-combineReports l = combineLangMs . Report.combineReports l
+  -> [GenericLangM (GenericReportT l o m) a]
+  -> GenericLangM (GenericReportT l o m) ()
+combineReports l f = combineLangMs (Report.combineReports l f)
 
 alignOutput
   :: Monad m
-  => (Map Language String -> o)
+  => (Map l String -> o)
   -> ([o] -> o)
-  -> LangM' (ReportT o m) a
-  -> LangM' (ReportT o m) ()
+  -> GenericLangM (GenericReportT l o m) a
+  -> GenericLangM (GenericReportT l o m) ()
 alignOutput l = mapLangM . Report.alignOutput l
 
 combineTwoReports
   :: Monad m
-  => (Map Language String -> o)
+  => (Map l String -> o)
   -> ([o] -> [o] -> o)
-  -> LangM' (ReportT o m) a
-  -> LangM' (ReportT o m) b
-  -> LangM' (ReportT o m) ()
+  -> GenericLangM (GenericReportT l o m) a
+  -> GenericLangM (GenericReportT l o m) b
+  -> GenericLangM (GenericReportT l o m) ()
 combineTwoReports l = combineLangM . Report.combineTwoReports l
 
-format :: Monad m => o -> LangM' (ReportT o m) ()
-format = lift . Report . tell . (:[]) . Format
+out :: Monad m => GenericOut l o -> GenericLangM (GenericReportT l o m) ()
+out = lift . Report . tell . (:[])
 
-abortWith :: Monad m => o -> LangM' (ReportT o m) b
+format :: Monad m => o -> GenericLangM (GenericReportT l o m) ()
+format = out . Format
+
+abortWith :: Monad m => o -> GenericLangM (GenericReportT l o m) b
 abortWith d = (*>)
   (format d)
   $ lift $ Report $ MaybeT (return Nothing)
 
 toAbort
   :: Monad m
-  => (Map Language String -> o)
-  -> LangM' (ReportT o m) a
-  -> LangM' (ReportT o m) b
+  => (Map l String -> o)
+  -> GenericLangM (GenericReportT l o m) a
+  -> GenericLangM (GenericReportT l o m) b
 toAbort l = mapLangM $ Report.toAbort l
 
-mapLangM :: (m a -> m b) -> LangM' m a -> LangM' m b
-mapLangM f om = LangM $ f . withLang om
+mapLangM :: (m a -> m b) -> GenericLangM m a -> GenericLangM m b
+mapLangM f om = LangM $ f $ unLangM om
 
-instance OutputMonad Maybe where
+instance GenericOutputMonad Language Maybe where
+  type LanguageMonad Language Maybe = Maybe
+  type Output Language Maybe = ()
+  type Result Language Maybe a = ()
   assertion b _   = unless b $ lift Nothing
   image _         = pure ()
   images _ _ _    = pure ()
@@ -353,41 +400,66 @@ instance OutputMonad Maybe where
   latex _         = pure ()
   code _          = pure ()
   translated _    = pure ()
+  runLangM        = Just
+    . (, foldr (`M.insert` ()) M.empty [minBound .. maxBound])
+    . maybe (error "aborted") (const ()) . unLangM
 
 data OutputException = Refused | AssertionFailed deriving Show
 instance Exception OutputException
 
-instance OutputMonad IO where
-  assertion b m = unless b $ m *> lift (putStrLn "" >> throwIO AssertionFailed)
-  image         = lift . putStr . ("file: " ++)
-  images g f    = lift . putStrLn . foldrWithKey
+instance (Bounded l, Enum l, Ord l) => GenericOutputMonad l IO where
+  type LanguageMonad l IO = GenericReportT l (IO ()) IO
+  type Output l IO = IO ()
+  type Result l IO a = Maybe a
+  assertion b m = unless b $ m *> format (putStrLn "" >> throwIO AssertionFailed)
+  image         = format . putStr . ("file: " ++)
+  images g f    = format . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
     ""
-  paragraph     = (*> lift (putStrLn ""))
-  text          = lift . putStr
+  paragraph     = (*> format (putStrLn ""))
+  text          = format . putStr
   enumerateM p  = foldl
-    (\o (x, e) -> paragraph $ do o; p x; lift $ putStr "  "; e; pure ())
+    (\o (x, e) -> paragraph $ do o; p x; format $ putStr "  "; e; pure ())
     (pure ())
   itemizeM      = foldl
-    (\o x -> paragraph $ do o; lift $ putStr " -  "; x; pure ())
+    (\o x -> paragraph $ do o; format $ putStr " -  "; x; pure ())
     (pure ())
   indent xs     = do
-    lift $ putStr ">>>>"
+    format $ putStr ">>>>"
     xs
-    lift $ putStrLn "<<<<"
+    format $ putStrLn "<<<<"
     pure ()
   refuse xs     = do
     xs
     indent $ text "No"
-    lift $ throwIO Refused
+    format $ throwIO Refused
     pure ()
-  latex         = lift . putStrLn . ("LaTeX: " ++)
-  code          = lift . putStr . (\xs -> " <" ++ xs ++ "> ")
-  translated lm = LangM $ \l ->
-    (text . fromMaybe "" $ M.lookup l lm) `withLang` l
+  latex         = format . putStrLn . ("LaTeX: " ++)
+  code          = format . putStr . (\xs -> " <" ++ xs ++ "> ")
+  translated lm = out (Localised lm)
+  runLangM l = do
+    (r, os) <- getOutsWithResult $ unLangM l
+    let output = either id id $ foldr toOutput' (Right M.empty) os
+    return (r, output)
+    where
+      toOutput' x xs = do
+        xs' <- xs
+        case x of
+          Abort -> Left xs'
+          Format o -> return $ insertAllWith (>>) o xs'
+          Localised m -> return $ M.unionWith (>>) xs' (putStrLn <$> m)
+
+insertAllWith
+  :: (Bounded k, Enum k, Ord k)
+  => (a -> a -> a)
+  -> a
+  -> Map k a
+  -> Map k a
+insertAllWith f x m =
+  foldr (\k -> M.insertWith (flip f) k x) m [minBound .. maxBound]
 
 newtype IsolatedOutput m a = IsolatedOutput { runOutput :: m a }
-  deriving (Functor,Applicative,Monad,OutputMonad)
+  deriving (Applicative, Functor, Monad) -- OutputMonad
 
 runIsolated :: forall m. (MonadIO m, MonadCatch m) => IsolatedOutput m () -> m ()
 runIsolated = flip catch handleExeption . runOutput
