@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Control.Monad.Output.LaTeX (
   getLaTeX,
@@ -10,22 +12,23 @@ import qualified Data.Map as M
 
 import Control.Monad.Output (
   Language,
-  LangM' (LangM),
-  Out(Format),
-  OutputMonad(..),
-  ReportT (Report),
+  GenericLangM (LangM),
+  GenericOut (Localised),
+  GenericOutputMonad (..),
+  GenericReportT (Report),
+  ReportT,
   abortWith,
+  alignOutput,
+  combineReports,
+  combineTwoReports,
   format,
   getAllOuts,
+  runLangMReport,
   toOutput,
-  withLang,
   )
 
-import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Trans (MonadTrans (lift))
-import Control.Monad.Trans.Maybe (MaybeT (MaybeT))
 import Control.Monad.Writer (MonadWriter (tell))
-import Data.Bifunctor (Bifunctor (bimap))
+import Data.Bifunctor (first)
 import Data.Foldable (Foldable (foldl'))
 import Data.Maybe (fromMaybe)
 import Data.Text (pack)
@@ -34,36 +37,27 @@ import Text.LaTeX.Base.Syntax (
   TeXArg (FixArg, OptArg),
   )
 
-toOutputL :: Language -> Out LaTeX -> Maybe LaTeX
-toOutputL = toOutput . withL
-
-alignOutputL
-  :: ([LaTeX] -> LaTeX)
-  -> LangM' (ReportT LaTeX IO) a
-  -> LangM' (ReportT LaTeX IO) ()
-alignOutputL f lr = LangM $ \l -> do
-  Report $ do
-    os <- liftIO $ getAllOuts (lr `withLang` l)
-    xs <- MaybeT . return $ toOutputL l `mapM` os
-    tell . (:[]) . Format $ f xs
-
-withL :: Language -> M.Map Language String -> LaTeX
-withL l = maybe mempty (TeXRaw . pack) . M.lookup l
-
-toLaTeX :: Monad m => Language -> ReportT LaTeX m a -> m LaTeX
-toLaTeX l r = do
+{-|
+Retrieves the function to get LaTeX-Code when provided a 'Language'.
+In contrast to 'execLangM' it throws a RuntimeException on abortion.
+-}
+toLaTeX :: Monad m => ReportT LaTeX m a -> m (Language -> LaTeX)
+toLaTeX r = do
   os <- getAllOuts r
   return $ mconcat $ bs os
   where
-    bs = fmap $ fromMaybe (error "was rejected") . toOutputL l
+    bs = fmap $ fromMaybe (error "was rejected") . toOutput
 
-getLaTeX :: Monad m => Language -> ReportT LaTeX m a -> m (Either LaTeX LaTeX)
-getLaTeX l r = do
+getLaTeX
+  :: Monad m
+  => ReportT LaTeX m a
+  -> m (Either (Language -> LaTeX) (Language -> LaTeX))
+getLaTeX r = do
   os <- getAllOuts r
   return $ foldl'
     (\xs x -> do
         xs' <- xs
-        maybe (Left xs') (return . (xs' <>)) $ toOutputL l x)
+        maybe (Left xs') (return . (xs' <>)) $ toOutput x)
     (Right mempty)
     os
 
@@ -78,7 +72,10 @@ transformFile []     = []
 transformFile "svg"  = "pdf"
 transformFile (x:xs) = x:transformFile xs
 
-instance OutputMonad (ReportT LaTeX IO) where
+instance GenericOutputMonad Language (ReportT LaTeX IO) where
+  type InnerMonad Language (ReportT LaTeX IO) = IO
+  type Output Language (ReportT LaTeX IO) = Language -> LaTeX
+  type Result Language (ReportT LaTeX IO) a = Maybe a
   assertion p o = o *>
     if p
       then format . TeXEnv "quote" [] $ TeXRaw "Yes."
@@ -104,25 +101,20 @@ instance OutputMonad (ReportT LaTeX IO) where
       <> xs
     )
     mempty
-  paragraph = alignOutputL ((<> par) . mconcat)
+  paragraph = alignOutput ((<> par) . mconcat)
   text = format . TeXRaw . pack . (\xs -> ' ':xs ++ " ")
   refuse xs = xs *> abortWith mempty
-  indent = alignOutputL (TeXEnv "quote" [] . mconcat)
-  enumerateM f xs = LangM $ \l -> Report $ do
-    let xs' = bimap ((`withLang` l) . f) (`withLang` l) <$> xs
-    xs'' <- outT l `mapM` xs'
-    tell . (:[]) . Format $ TeXEnv "enumerate" [] $ mconcat xs''
+  indent = alignOutput (TeXEnv "quote" [] . mconcat)
+  enumerateM f =
+      combineReports (TeXEnv "enumerate" [] . mconcat . concat)
+      . map (uncurry processItem . first f)
     where
-      outT l (x, y) = (\x' y' ->
-          TeXComm "item" [OptArg $ mconcat x', FixArg $ mconcat y']
-          <> newline)
-        <$> toOut l x
-        <*> toOut l y
-      toOut l r = do
-        os <- lift $ lift $ getAllOuts r
-        MaybeT . return . sequence $ toOutputL l <$> os
-  itemizeM = alignOutputL
+      processItem = combineTwoReports $ \x' y' ->
+        TeXComm "item" [OptArg $ mconcat x', FixArg $ mconcat y']
+        <> newline
+  itemizeM = alignOutput
     (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty) . sequenceA
   latex = format . TeXRaw . pack . ('$':) . (++ "$")
   code = format . TeXEnv "verbatim" [] . TeXRaw . pack
-  translated lm = LangM $ \l -> Report . tell . (:[]) . Format  $ withL l lm
+  translated lm = LangM $ Report . tell . (:[]) . Localised $ TeXRaw . pack . lm
+  runLangM = runLangMReport mempty (<>)

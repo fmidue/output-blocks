@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DerivingStrategies #-}
 -- | This module provides common skeletons for printing tasks
 module Control.Monad.Report (
@@ -18,7 +19,6 @@ module Control.Monad.Report (
   ) where
 
 import Control.Applicative              (Alternative)
-import Control.Monad                    (void)
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Identity           (Identity)
 import Control.Monad.Trans              (MonadTrans (lift))
@@ -28,7 +28,6 @@ import Control.Monad.Writer (
   WriterT (WriterT, runWriterT),
   execWriterT,
   )
-import Data.Map                         (Map)
 
 data Language = English | German
   deriving (Bounded, Enum, Eq, Ord)
@@ -36,7 +35,8 @@ data Language = English | German
 data GenericOut l o =
   Abort |
   Format o |
-  Localised (Map l String)
+  Localised (l -> o)
+  deriving Functor
 
 newtype GenericReportT l o m r = Report { unReport :: MaybeT (WriterT [GenericOut l o] m) r }
   deriving newtype (Alternative, Applicative, Functor, Monad, MonadIO)
@@ -64,54 +64,50 @@ getAllOuts' r = do
 
 combineReports
   :: Monad m
-  => (Map l String -> o)
-  -> ([[o]] -> o)
+  => ([[o]] -> o)
   -> [GenericReportT l o m a]
   -> GenericReportT l o m ()
-combineReports l f rs = Report $ do
+combineReports f rs = Report $ do
   rs' <- lift . lift $ getAllOuts `mapM` rs
-  os <- MaybeT . return $ mapM (toOutput l) `mapM` rs'
-  tell . (:[]) . Format $ f os
+  os <- MaybeT . return $ mapM toOutput `mapM` rs'
+  tell . (:[]) . Localised $ \l -> f $ map (map ($ l)) os
 
 alignOutput
   :: Monad m
-  => (Map l String -> o)
-  -> ([o] -> o)
+  => ([o] -> o)
   -> GenericReportT l o m a
   -> GenericReportT l o m ()
-alignOutput l f r = Report $ do
+alignOutput f r = Report $ do
   r' <- lift . lift . getAllOuts $ r
-  xs  <- MaybeT . return $ toOutput l `mapM` r'
-  tell . (:[]) . Format $ f xs
+  xs  <- MaybeT . return $ toOutput `mapM` r'
+  tell . (:[]) . Localised $ \l -> f $ map ($ l) xs
 
 toOutput
-  :: (Map l String -> o)
-  -> GenericOut l o
-  -> Maybe o
-toOutput _ Abort         = Nothing
-toOutput _ (Format x)    = Just x
-toOutput f (Localised x) = Just $ f x
+  :: GenericOut l o
+  -> Maybe (l -> o)
+toOutput Abort         = Nothing
+toOutput (Format x)    = Just $ const x
+toOutput (Localised x) = Just x
 
 combineTwoReports
   :: Monad m
-  => (Map l String -> o)
-  -> ([o] -> [o] -> o)
+  => ([o] -> [o] -> o)
   -> GenericReportT l o m a
   -> GenericReportT l o m b
   -> GenericReportT l o m ()
-combineTwoReports l f r1 r2 = do
-  r1' <- lift $ getAllOuts r1
-  case toOutput l `mapM` r1' of
-    Nothing -> void r1
-    Just x  -> alignOutput l (f x) r2
+combineTwoReports f r1 r2 = Report $ do
+  r1' <- lift . lift $ getAllOuts r1
+  o1 <- MaybeT . return $ toOutput `mapM` r1'
+  r2' <- lift . lift $ getAllOuts r2
+  o2 <- MaybeT . return $ toOutput `mapM` r2'
+  tell . (:[]) . Localised $ \l -> f (map ($ l) o1) $ map ($ l) o2
 
 toAbort
   :: Monad m
-  => (Map l String -> o)
-  -> GenericReportT l o m a
+  => GenericReportT l o m a
   -> GenericReportT l o m b
-toAbort l r = Report $ do
+toAbort r = Report $ do
   r' <- lift . lift $ getAllOuts r
-  xs  <- MaybeT . return $ toOutput l `mapM` r'
-  tell $ Format <$> xs
+  xs  <- MaybeT . return $ toOutput `mapM` r'
+  tell $ Localised <$> xs
   MaybeT $ return Nothing
