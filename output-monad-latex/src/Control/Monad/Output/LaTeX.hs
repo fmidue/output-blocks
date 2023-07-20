@@ -17,6 +17,7 @@ import Control.Monad.Output (
   GenericOutputMonad (..),
   GenericReportT (Report),
   ReportT,
+  RunnableOutputMonad (..),
   abortWith,
   alignOutput,
   combineReports,
@@ -73,9 +74,6 @@ transformFile "svg"  = "pdf"
 transformFile (x:xs) = x:transformFile xs
 
 instance GenericOutputMonad Language (ReportT LaTeX IO) where
-  type InnerMonad Language (ReportT LaTeX IO) = IO
-  type Output Language (ReportT LaTeX IO) = Language -> LaTeX
-  type Result Language (ReportT LaTeX IO) a = Maybe a
   assertion p o = o *>
     if p
       then format . TeXEnv "quote" [] $ TeXRaw "Yes."
@@ -117,4 +115,8 @@ instance GenericOutputMonad Language (ReportT LaTeX IO) where
   latex = format . TeXRaw . pack . ('$':) . (++ "$")
   code = format . TeXEnv "verbatim" [] . TeXRaw . pack
   translated lm = LangM $ Report . tell . (:[]) . Localised $ TeXRaw . pack . lm
+
+instance RunnableOutputMonad Language (ReportT LaTeX IO) where
+  type RunMonad Language (ReportT LaTeX IO) = IO
+  type Output Language (ReportT LaTeX IO) = LaTeX
   runLangM = runLangMReport mempty (<>)

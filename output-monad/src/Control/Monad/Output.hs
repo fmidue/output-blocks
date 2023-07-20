@@ -29,6 +29,7 @@ module Control.Monad.Output (
   -- * Output monad
   GenericOutputMonad (..),
   OutputMonad,
+  RunnableOutputMonad (..),
   enumerate,
   abortWith,
   alignOutput,
@@ -57,6 +58,7 @@ module Control.Monad.Output (
   runLangMReport,
   singleChoice,
   singleChoiceSyntax,
+  withLang,
   continueOrAbort,
   yesNo,
   ) where
@@ -96,6 +98,7 @@ import Control.Monad.Writer (
 import Control.Monad.Catch              (MonadCatch(catch))
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (foldl', for_, sequenceA_, traverse_)
+import Data.Functor.Identity            (Identity (Identity))
 import Data.List                        (sort)
 import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
@@ -265,12 +268,7 @@ enumerate f g m = enumerateM (text . f) (M.toList $ text . g <$> m)
 
 type OutputMonad m = GenericOutputMonad Language m
 
-class (Applicative m, Monad (InnerMonad l m), Ord l)
-  => GenericOutputMonad l m where
-  -- | the monad handling multilingual output
-  type InnerMonad l m :: * -> *
-  type Output l m
-  type Result l m a
+class (Applicative m, Ord l) => GenericOutputMonad l m where
   -- | for assertions, i.e. expected behaviour is explanation
   -- (and abortion on 'False')
   assertion  :: Bool -> GenericLangM l m () -> GenericLangM l m ()
@@ -299,9 +297,6 @@ class (Applicative m, Monad (InnerMonad l m), Ord l)
   code       :: String -> GenericLangM l m ()
   -- | for language dependent formatting
   translated :: (l -> String) -> GenericLangM l m ()
-  runLangM
-    :: GenericLangM l m a
-    -> InnerMonad l m (Result l m a, Output l m)
   localised
     :: (String -> GenericLangM l m a)
     -> Map l String
@@ -313,22 +308,6 @@ class (Applicative m, Monad (InnerMonad l m), Ord l)
     -> GenericLangM l m ()
   localised_ = traverse_
 
-execLangM
-  :: GenericOutputMonad l m
-  => GenericLangM l m a
-  -> InnerMonad l m (Output l m)
-execLangM lm = do
-  ~(_, output) <- runLangM lm
-  return output
-
-evalLangM
-  :: GenericOutputMonad l m
-  => GenericLangM l m a
-  -> InnerMonad l m (Result l m a)
-evalLangM lm = do
-  ~(result, _) <- runLangM lm
-  return result
-
 defaultLocalised
   :: (Applicative m, Eq l)
   => (String -> GenericLangM l m a)
@@ -338,6 +317,41 @@ defaultLocalised f ts = do
   let (keys, vals) = unzip $ M.toAscList ts
   vals' <- traverse f vals
   pure $ M.fromAscList $ zip keys vals'
+
+class (GenericOutputMonad l m, Monad (RunMonad l m))
+  => RunnableOutputMonad l m where
+  -- | the monad handling multilingual output
+  type RunMonad l m :: * -> *
+  type Output l m
+  runLangM
+    :: GenericLangM l m a
+    -> RunMonad l m (Maybe a, l -> Output l m)
+
+execLangM
+  :: RunnableOutputMonad l m
+  => GenericLangM l m a
+  -> RunMonad l m (l -> Output l m)
+execLangM lm = do
+  ~(_, output) <- runLangM lm
+  return output
+
+evalLangM
+  :: RunnableOutputMonad l m
+  => GenericLangM l m a
+  -> RunMonad l m (Maybe a)
+evalLangM lm = do
+  ~(result, _) <- runLangM lm
+  return result
+
+withLang
+  :: (RunnableOutputMonad l m, Output l m ~ RunMonad l m b)
+  => GenericLangM l m a
+  -> l
+  -> RunMonad l m (Maybe a)
+withLang xs l = do
+  (r, o) <- runLangM xs
+  o l
+  return r
 
 recoverFrom
   :: Alternative m
@@ -408,9 +422,6 @@ mapLangM :: (m a -> m b) -> GenericLangM l m a -> GenericLangM l m b
 mapLangM f om = LangM $ f $ unLangM om
 
 instance Ord l => GenericOutputMonad l Maybe where
-  type InnerMonad l Maybe = Maybe
-  type Output l Maybe = ()
-  type Result l Maybe a = ()
   assertion b _   = unless b $ lift Nothing
   image _         = pure ()
   images _ _ _    = pure ()
@@ -423,19 +434,18 @@ instance Ord l => GenericOutputMonad l Maybe where
   latex _         = pure ()
   code _          = pure ()
   translated _    = pure ()
-  runLangM        = Just
-    . (, ())
-    . maybe (error "aborted") (const ()) . unLangM
+
+instance Ord l => RunnableOutputMonad l Maybe where
+  type RunMonad l Maybe = Identity
+  type Output l Maybe = ()
+  runLangM        = Identity . (, const ()) . unLangM
 
 data OutputException = Refused | AssertionFailed deriving Show
 instance Exception OutputException
 
-instance (Bounded l, Enum l, l ~ Language)
+instance (l ~ Language)
   => GenericOutputMonad l (GenericReportT l (IO ()) IO)
   where
-  type InnerMonad l (GenericReportT l (IO ()) IO) = IO
-  type Output l (GenericReportT l (IO ()) IO) = l -> IO ()
-  type Result l (GenericReportT l (IO ()) IO) a = Maybe a
   assertion b m = unless b $ m *> format (putStrLn "" >> throwIO AssertionFailed)
   image         = format . putStr . ("file: " ++)
   images g f    = format . putStrLn . foldrWithKey
@@ -464,6 +474,12 @@ instance (Bounded l, Enum l, l ~ Language)
   latex         = format . putStrLn . ("LaTeX: " ++)
   code          = format . putStr . (\xs -> " <" ++ xs ++ "> ")
   translated lm = out (Localised $ putStr . lm)
+
+instance l ~ Language
+  => RunnableOutputMonad l (GenericReportT l (IO ()) IO)
+  where
+  type RunMonad l (GenericReportT l (IO ()) IO) = IO
+  type Output l (GenericReportT l (IO ()) IO) = IO ()
   runLangM = runLangMReport (return ()) (>>)
 
 runLangMReport
