@@ -51,6 +51,9 @@ module Control.Monad.Output (
   translate,
   translations,
   -- * Helper functions
+  ($=<<),
+  ($>>),
+  ($>>=),
   evalLangM,
   execLangM,
   multipleChoice,
@@ -305,6 +308,25 @@ class (Applicative m, Ord l) => GenericOutputMonad l m where
     -> GenericLangM l m ()
   localised_ = traverse_
 
+infixr 0 $=<<, $>>=, $>>
+
+($=<<) :: Monad m => (a -> GenericLangM l m b) -> m a -> GenericLangM l m b
+f $=<< x = LangM $ x >>= unLangM . f
+
+($>>=)
+  :: Monad m
+  => GenericLangM l m a
+  -> (a -> GenericLangM l m b)
+  -> GenericLangM l m b
+x $>>= f = LangM $ unLangM x >>= unLangM . f
+
+($>>)
+  :: Monad m
+  => GenericLangM l m ()
+  -> GenericLangM l m a
+  -> GenericLangM l m a
+x $>> y = LangM $ unLangM x >> unLangM y
+
 defaultLocalised
   :: (Applicative m, Eq l)
   => (String -> GenericLangM l m a)
@@ -496,6 +518,25 @@ runLangMReport neutral f lm = do
         Abort -> Left xs'
         Format o -> Right $ f xs' o
         Localised m -> Right $ f xs' (m l)
+
+runLangMReportMultiLang
+  :: Monad m
+  => o
+  -> (o -> o -> o)
+  -> ((l -> o) -> o)
+  -> GenericLangM l (GenericReportT l o m) a
+  -> m (Maybe a, o)
+runLangMReportMultiLang neutral f toO lm = do
+  (r, os) <- getOutsWithResult $ unLangM lm
+  let output = either id id $ foldl' toOutput' (Right neutral) os
+  return (r, output)
+  where
+    toOutput' xs x = do
+      xs' <- xs
+      case x of
+        Abort -> Left xs'
+        Format o -> Right $ f xs' o
+        Localised m -> Right $ f xs' $ toO m
 
 newtype IsolatedOutput m a = IsolatedOutput { runOutput :: m a }
   deriving (Applicative, Functor, Monad)
