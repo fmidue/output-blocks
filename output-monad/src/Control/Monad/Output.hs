@@ -163,7 +163,7 @@ printSolutionAndAssert
   => Maybe String
   -> Rational
   -> Rated m
-printSolutionAndAssert msolutionString points =
+printSolutionAndAssert msolutionString points = do
   for_ msolutionString (\solutionString ->
     when (points /= 1) $ paragraph $ do
       translate $ do
@@ -172,11 +172,8 @@ printSolutionAndAssert msolutionString points =
       code solutionString
       pure ()
     )
-  *> if points >= 1 % 2
-    then pure (Just points)
-    else do
-      refuse $ pure ()
-      pure Nothing
+  unless (points >= 1 % 2) $ refuse $ pure ()
+  return points
 
 singleChoiceSyntax
   :: (OutputMonad m, Eq a, Show a)
@@ -253,7 +250,7 @@ newtype GenericLangM l m a = LangM { unLangM :: m a }
 
 type LangM' m a = GenericLangM Language m a
 type LangM m = LangM' m ()
-type Rated m = LangM' m (Maybe Rational)
+type Rated m = LangM' m Rational
 
 instance MonadTrans (GenericLangM l) where
   lift = LangM
