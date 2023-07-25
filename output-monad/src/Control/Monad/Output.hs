@@ -59,6 +59,7 @@ module Control.Monad.Output (
   multipleChoice,
   printSolutionAndAssert,
   runLangMReport,
+  runLangMReportMultiLang,
   singleChoice,
   singleChoiceSyntax,
   withLang,
@@ -124,7 +125,7 @@ However, it will not abort.
 yesNo :: OutputMonad m => Bool -> LangM m -> LangM m
 yesNo p q = do
   paragraph q
-  paragraph $ indent $ localised_ code $ translations $
+  paragraph $ indent $ translatedCode $ flip localise $ translations $
       if p
       then do
         english "Yes."
@@ -282,6 +283,7 @@ class (Applicative m, Ord l) => GenericOutputMonad l m where
   refuse     :: GenericLangM l m () -> GenericLangM l m ()
   -- | for displaying text
   text       :: String -> GenericLangM l m ()
+  text = translated . const
   -- | for an enumerated sequence of elements
   enumerateM
     :: (a -> GenericLangM l m ())
@@ -295,18 +297,10 @@ class (Applicative m, Ord l) => GenericOutputMonad l m where
   latex      :: String -> GenericLangM l m ()
   -- | for fixed width fonts (i.e. typewriter style)
   code       :: String -> GenericLangM l m ()
+  code = translatedCode . const
+  translatedCode :: (l -> String) -> GenericLangM l m ()
   -- | for language dependent formatting
   translated :: (l -> String) -> GenericLangM l m ()
-  localised
-    :: (String -> GenericLangM l m a)
-    -> Map l String
-    -> GenericLangM l m (Map l a)
-  localised = defaultLocalised
-  localised_
-    :: (String -> GenericLangM l m a)
-    -> Map l String
-    -> GenericLangM l m ()
-  localised_ = traverse_
 
 infixr 0 $=<<, $>>=, $>>
 
@@ -326,16 +320,6 @@ x $>>= f = LangM $ unLangM x >>= unLangM . f
   -> GenericLangM l m a
   -> GenericLangM l m a
 x $>> y = LangM $ unLangM x >> unLangM y
-
-defaultLocalised
-  :: (Applicative m, Eq l)
-  => (String -> GenericLangM l m a)
-  -> Map l String
-  -> GenericLangM l m (Map l a)
-defaultLocalised f ts = do
-  let (keys, vals) = unzip $ M.toAscList ts
-  vals' <- traverse f vals
-  pure $ M.fromAscList $ zip keys vals'
 
 class (GenericOutputMonad l m, Monad (RunMonad l m))
   => RunnableOutputMonad l m where
@@ -452,6 +436,7 @@ instance Ord l => GenericOutputMonad l Maybe where
   indent xs       = xs
   latex _         = pure ()
   code _          = pure ()
+  translatedCode _ = pure ()
   translated _    = pure ()
 
 instance Ord l => RunnableOutputMonad l Maybe where
@@ -492,6 +477,8 @@ instance (l ~ Language)
     pure ()
   latex         = format . putStrLn . ("LaTeX: " ++)
   code          = format . putStr . (\xs -> " <" ++ xs ++ "> ")
+  translatedCode lm =
+    out (Localised $ putStr . (\xs -> " <" ++ xs ++ "> ") . lm)
   translated lm = out (Localised $ putStr . lm)
 
 instance l ~ Language

@@ -114,6 +114,9 @@ instance GenericOutputMonad Language (ReportT LaTeX IO) where
     (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty) . sequenceA
   latex = format . TeXRaw . pack . ('$':) . (++ "$")
   code = format . TeXEnv "verbatim" [] . TeXRaw . pack
+  translatedCode lm = LangM
+    $ Report . tell . (:[]) . Localised
+    $ TeXEnv "verbatim" [] . TeXRaw . pack . lm
   translated lm = LangM $ Report . tell . (:[]) . Localised $ TeXRaw . pack . lm
 
 instance RunnableOutputMonad Language (ReportT LaTeX IO) where
