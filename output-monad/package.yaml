@@ -20,6 +20,7 @@ library:
   source-dirs: src
   exposed-modules:
     - Control.Monad.Output
+    - Control.Monad.Output.Generic
 tests:
   output-monad-test:
     main: Spec.hs

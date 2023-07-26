@@ -11,10 +11,12 @@ import Control.Monad.Output (
   OutputMonad,
   ReportT,
   english,
-  evalLangM,
-  execLangM,
   german,
   translate,
+  )
+import Control.Monad.Output.Generic (
+  evalLangM,
+  execLangM,
   )
 import Control.Monad.Output.LaTeX (toLaTeX)
 import Text.LaTeX (LaTeX)

@@ -11,8 +11,10 @@ build-type:     Simple
 library
   exposed-modules:
       Control.Monad.Output
+      Control.Monad.Output.Generic
   other-modules:
-      Control.Monad.Report
+      Control.Monad.Output.Report
+      Control.Monad.Output.Report.Generic
       Paths_output_monad
   hs-source-dirs:
       src

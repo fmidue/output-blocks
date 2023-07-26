@@ -1,13 +1,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DerivingStrategies #-}
--- | This module provides common skeletons for printing tasks
-module Control.Monad.Report (
+{- |
+This module provides a generic output type for multilingual output as well as
+a writer monad transformer which has the ability to abort execution.
+-}
+module Control.Monad.Output.Report.Generic (
   GenericOut (..),
   GenericReportT (..),
-  Out,
-  ReportT,
-  Report,
   alignOutput,
   combineReports,
   combineTwoReports,
@@ -15,12 +15,10 @@ module Control.Monad.Report (
   getOutsWithResult,
   toAbort,
   toOutput,
-  Language (..),
   ) where
 
 import Control.Applicative              (Alternative)
 import Control.Monad.IO.Class           (MonadIO)
-import Control.Monad.Identity           (Identity)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (
@@ -29,33 +27,32 @@ import Control.Monad.Writer (
   execWriterT,
   )
 
-data Language = English | German
-  deriving (Bounded, Enum, Eq, Ord)
-
 data GenericOut l o =
   Abort |
   Format o |
   Localised (l -> o)
   deriving Functor
 
-newtype GenericReportT l o m r = Report { unReport :: MaybeT (WriterT [GenericOut l o] m) r }
+newtype GenericReportT l o m r =
+  Report { unReport :: MaybeT (WriterT [GenericOut l o] m) r }
   deriving newtype (Alternative, Applicative, Functor, Monad, MonadIO)
-
-type ReportT = GenericReportT Language
-type Out = GenericOut Language
 
 instance MonadTrans (GenericReportT l o) where
   lift m = Report $ MaybeT $ WriterT $ fmap (\x -> (Just x, [])) m
 
-type Report o r = ReportT o Identity r
-
-getOutsWithResult :: Monad m => GenericReportT l o m a -> m (Maybe a, [GenericOut l o])
+getOutsWithResult
+  :: Monad m
+  => GenericReportT l o m a
+  -> m (Maybe a, [GenericOut l o])
 getOutsWithResult = runWriterT . getAllOuts'
 
 getAllOuts :: Monad m => GenericReportT l o m a -> m [GenericOut l o]
 getAllOuts = execWriterT . getAllOuts'
 
-getAllOuts' :: Monad m => GenericReportT l o m a -> WriterT [GenericOut l o] m (Maybe a)
+getAllOuts'
+  :: Monad m
+  => GenericReportT l o m a
+  -> WriterT [GenericOut l o] m (Maybe a)
 getAllOuts' r = do
   x <- runMaybeT $ unReport r
   case x of

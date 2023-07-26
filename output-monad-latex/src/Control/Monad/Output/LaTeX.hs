@@ -17,15 +17,17 @@ import Control.Monad.Output (
   GenericOutputMonad (..),
   GenericReportT (Report),
   ReportT,
-  RunnableOutputMonad (..),
   abortWith,
   alignOutput,
   combineReports,
   combineTwoReports,
   format,
   getAllOuts,
-  runLangMReport,
   toOutput,
+  )
+import Control.Monad.Output.Generic (
+  RunnableOutputMonad (..),
+  runLangMReport,
   )
 
 import Control.Monad.Writer (MonadWriter (tell))
