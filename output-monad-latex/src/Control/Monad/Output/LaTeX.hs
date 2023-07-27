@@ -22,7 +22,6 @@ import Control.Monad.Output (
   combineReports,
   combineTwoReports,
   format,
-  getAllOuts,
   getOutsWithResult,
   toAbort,
   toOutput,
@@ -35,7 +34,6 @@ import Control.Monad.Output.Generic (
 import Control.Monad.Writer (MonadWriter (tell))
 import Data.Bifunctor (first)
 import Data.Foldable (Foldable (foldl'))
-import Data.Maybe (fromMaybe)
 import Data.Text (pack)
 import Text.LaTeX.Base.Syntax (
   LaTeX (TeXComm, TeXEnv, TeXRaw),
@@ -52,7 +50,7 @@ toLaTeX r = do
   return $ testResult result <> mconcat (bs os)
   where
     testResult = maybe reject (const mempty)
-    bs = fmap $ fromMaybe reject . toOutput
+    bs = fmap toOutput
     reject = error "was rejected"
 
 getLaTeX
@@ -60,13 +58,13 @@ getLaTeX
   => ReportT LaTeX m a
   -> m (Either (Language -> LaTeX) (Language -> LaTeX))
 getLaTeX r = do
-  os <- getAllOuts r
-  return $ foldl'
-    (\xs x -> do
-        xs' <- xs
-        maybe (Left xs') (return . (xs' <>)) $ toOutput x)
-    (Right mempty)
+  (result, os) <- getOutsWithResult r
+  return $ how result $ foldl'
+    (\xs x -> xs <> toOutput x)
+    mempty
     os
+  where
+    how = maybe Left (const Right)
 
 par :: LaTeX
 par = TeXRaw "\n\n"

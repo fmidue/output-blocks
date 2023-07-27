@@ -277,15 +277,13 @@ runLangMReport
   -> m (Maybe a, l -> o)
 runLangMReport neutral f lm = do
   (r, os) <- getOutsWithResult $ unLangM lm
-  let output l = either id id $ foldl' (toOutput' l) (Right neutral) os
+  let output l = foldl' (toOutput' l) neutral os
   return (r, output)
   where
-    toOutput' l xs x = do
-      xs' <- xs
+    toOutput' l xs x =
       case x of
-        Abort -> Left xs'
-        Format o -> Right $ f xs' o
-        Localised m -> Right $ f xs' (m l)
+        Format o -> f xs o
+        Localised m -> f xs (m l)
 
 {-|
 Provided a neutral element, a function to combine generated output,
@@ -304,15 +302,13 @@ runLangMReportMultiLang
   -> m (Maybe a, o)
 runLangMReportMultiLang neutral f toO lm = do
   (r, os) <- getOutsWithResult $ unLangM lm
-  let output = either id id $ foldl' toOutput' (Right neutral) os
+  let output = foldl' toOutput' neutral os
   return (r, output)
   where
-    toOutput' xs x = do
-      xs' <- xs
+    toOutput' xs x =
       case x of
-        Abort -> Left xs'
-        Format o -> Right $ f xs' o
-        Localised m -> Right $ f xs' $ toO m
+        Format o -> f xs o
+        Localised m -> f xs $ toO m
 
 data OutputException = Refused | AssertionFailed deriving Show
 instance Exception OutputException

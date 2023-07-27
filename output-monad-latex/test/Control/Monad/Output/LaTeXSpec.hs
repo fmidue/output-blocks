@@ -51,6 +51,9 @@ spec =
     it "should abort at refusion (and not earlier)" $
       render . ($ English) <$> execLangM abort
       `shouldReturn` " a \n\n True \\begin{quote}Yes.\\end{quote}\n\n False \\begin{quote}No.\\end{quote}\n\n"
+    it "should abort at refusion (and not earlier) in enumeration" $
+      render . ($ English) <$> execLangM abort2
+      `shouldReturn` "\\begin{enumerate}\\item[ 1 ]{ a }\n\\item[ NO! ]{}\n\\end{enumerate}\n\n"
     it "abort should evaluate to Nothing" $
       evalLangM abort `shouldReturn` Nothing
   where
@@ -67,7 +70,18 @@ spec =
       paragraph $ assertion True $ text "True"
       paragraph $ assertion False $ text "False"
       paragraph $ refuse $ text "aborted"
+      translation
+      pure ()
+    translation =
       paragraph $ translate $ do
         english "foo"
         german "bar"
+    abort2 = do
+      paragraph $ enumerateM (\x -> if x == "2" then refuse $ text "NO!" else text x) [
+        ("1", text "a"),
+        ("2", text "b"),
+        ("3", refuse $ text "not c"),
+        ("4", text "d")
+        ]
+      translation
       pure ()

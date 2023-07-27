@@ -23,15 +23,15 @@ import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import Control.Monad.Writer (
-  MonadWriter (pass, tell),
+  MonadWriter (tell),
   WriterT (WriterT, runWriterT),
   execWriterT,
   )
+import Data.Bifunctor                   (second)
 import Data.List.HT                     (takeUntil)
-import Data.Maybe                       (catMaybes, isNothing)
+import Data.Maybe                       (isNothing)
 
 data GenericOut l o =
-  Abort |
   Format o |
   Localised (l -> o)
   deriving Functor
@@ -44,26 +44,17 @@ instance MonadTrans (GenericReportT l o) where
   lift m = Report $ MaybeT $ WriterT $ fmap (\x -> (Just x, [])) m
 
 getOutsWithResult
-  :: Monad m
-  => GenericReportT l o m a
+  :: GenericReportT l o m a
   -> m (Maybe a, [GenericOut l o])
 getOutsWithResult = runWriterT . getAllOuts'
 
 getAllOuts :: Monad m => GenericReportT l o m a -> m [GenericOut l o]
 getAllOuts = execWriterT . getAllOuts'
 
-untilNothing :: [Maybe a] -> [a]
-untilNothing = catMaybes . takeUntil isNothing
-
 getAllOuts'
-  :: Monad m
-  => GenericReportT l o m a
+  :: GenericReportT l o m a
   -> WriterT [GenericOut l o] m (Maybe a)
-getAllOuts' r = do
-  x <- runMaybeT $ unReport r
-  case x of
-    Nothing -> pass $ return (x, (Abort :))
-    Just _ -> return x
+getAllOuts' r = runMaybeT $ unReport r
 
 {-|
 Combines the output of the list of given reports using the provided function.
@@ -76,10 +67,9 @@ combineReports
   -> GenericReportT l o m ()
 combineReports f rs = Report $ do
   rs' <- lift . lift $ getOutsWithResult `mapM` rs
-  let maybeOs = map (map toOutput . snd) rs'
-      os = map untilNothing $ takeUntil (any isNothing) maybeOs
+  let maybeOs = map (second (map toOutput)) rs'
+      os = map snd $ takeUntil (isNothing . fst) maybeOs
   tell . (:[]) . Localised $ \l -> f $ map (map ($ l)) os
-  MaybeT . return $ mapM_ sequence_ maybeOs
   MaybeT . return $ mapM_ fst rs'
 
 alignOutput
@@ -89,18 +79,15 @@ alignOutput
   -> GenericReportT l o m a
 alignOutput f r = Report $ do
   (result, r') <- lift . lift . getOutsWithResult $ r
-  let maybeXs = map toOutput r'
-      xs = untilNothing maybeXs
+  let xs = map toOutput r'
   tell . (:[]) . Localised $ \l -> f $ map ($ l) xs
-  MaybeT . return $ sequence_ maybeXs
   MaybeT . return $ result
 
 toOutput
   :: GenericOut l o
-  -> Maybe (l -> o)
-toOutput Abort         = Nothing
-toOutput (Format x)    = Just $ const x
-toOutput (Localised x) = Just x
+  -> (l -> o)
+toOutput (Format x)    = const x
+toOutput (Localised x) = x
 
 {-|
 Combines the output of the two given reports using the provided functions.
@@ -116,16 +103,12 @@ combineTwoReports
   -> GenericReportT l o m ()
 combineTwoReports f r1 r2 = Report $ do
   (result1, r1') <- lift . lift $ getOutsWithResult r1
-  let maybeO1 = map toOutput r1'
-      o1 = untilNothing maybeO1
+  let o1 = map toOutput r1'
   (result2, r2') <- lift . lift $ getOutsWithResult r2
-  let maybeO2 = map toOutput r2'
-      o2
-        | any isNothing maybeO1 = []
-        | otherwise = untilNothing maybeO2
+  let o2
+        | isNothing result1 = []
+        | otherwise = map toOutput r2'
   tell . (:[]) . Localised $ \l -> f (map ($ l) o1) $ map ($ l) o2
-  MaybeT . return $ sequence_ maybeO1
-  MaybeT . return $ sequence_ maybeO2
   void . MaybeT . return $ result1
   void . MaybeT . return $ result2
 
