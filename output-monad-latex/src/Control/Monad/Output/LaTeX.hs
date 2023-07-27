@@ -23,6 +23,8 @@ import Control.Monad.Output (
   combineTwoReports,
   format,
   getAllOuts,
+  getOutsWithResult,
+  toAbort,
   toOutput,
   )
 import Control.Monad.Output.Generic (
@@ -46,10 +48,12 @@ In contrast to 'execLangM' it throws a RuntimeException on abortion.
 -}
 toLaTeX :: Monad m => ReportT LaTeX m a -> m (Language -> LaTeX)
 toLaTeX r = do
-  os <- getAllOuts r
-  return $ mconcat $ bs os
+  (result, os) <- getOutsWithResult r
+  return $ testResult result <> mconcat (bs os)
   where
-    bs = fmap $ fromMaybe (error "was rejected") . toOutput
+    testResult = maybe reject (const mempty)
+    bs = fmap $ fromMaybe reject . toOutput
+    reject = error "was rejected"
 
 getLaTeX
   :: Monad m
@@ -103,7 +107,7 @@ instance GenericOutputMonad Language (ReportT LaTeX IO) where
     mempty
   paragraph = alignOutput ((<> par) . mconcat)
   text = format . TeXRaw . pack . (\xs -> ' ':xs ++ " ")
-  refuse xs = xs *> abortWith mempty
+  refuse = toAbort
   indent = alignOutput (TeXEnv "quote" [] . mconcat)
   enumerateM f =
       combineReports (TeXEnv "enumerate" [] . mconcat . concat)

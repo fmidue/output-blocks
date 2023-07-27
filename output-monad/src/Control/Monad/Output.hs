@@ -264,7 +264,7 @@ instance Exception OutputException
 instance (l ~ Language)
   => GenericOutputMonad l (GenericReportT l (IO ()) IO)
   where
-  assertion b m = unless b $ m *> format (putStrLn "" >> throwIO AssertionFailed)
+  assertion b m = m *> unless b (format $ putStrLn "" >> throwIO AssertionFailed)
   image         = format . putStr . ("file: " ++)
   images g f    = format . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)

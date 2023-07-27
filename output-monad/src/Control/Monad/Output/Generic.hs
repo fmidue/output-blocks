@@ -61,10 +61,9 @@ import Control.Monad.Output.Report.Generic (
 
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Exception.Base           (Exception, displayException)
-import Control.Monad                    (unless)
+import Control.Monad                    (unless, void)
 import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans              (MonadTrans (lift))
-import Control.Monad.Trans.Maybe        (MaybeT (MaybeT))
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
@@ -193,6 +192,10 @@ combineLangM
   -> GenericLangM l (GenericReportT l o m) c
 combineLangM f x y = LangM $ f (unLangM x) (unLangM y)
 
+{-|
+Combines the output of the list of given reports using the provided function.
+Output is provided for all reports up to including the first failing report.
+-}
 combineReports
   :: Monad m
   => ([[o]] -> o)
@@ -205,8 +208,14 @@ alignOutput
   => ([o] -> o)
   -> GenericLangM l (GenericReportT l o m) a
   -> GenericLangM l (GenericReportT l o m) ()
-alignOutput = mapLangM . Report.alignOutput
+alignOutput f = void . mapLangM (Report.alignOutput f)
 
+{-|
+Combines the output of the two given reports using the provided functions.
+
+If the execution aborts on the first report the second report is treated
+as if has not produced any output.
+-}
 combineTwoReports
   :: Monad m
   => ([o] -> [o] -> o)
@@ -221,10 +230,8 @@ out = lift . Report . tell . (:[])
 format :: Monad m => o -> GenericLangM l (GenericReportT l o m) ()
 format = out . Format
 
-abortWith :: Monad m => o -> GenericLangM l (GenericReportT l o m) b
-abortWith d = (*>)
-  (format d)
-  $ lift $ Report $ MaybeT (return Nothing)
+abortWith :: Monad m => o -> GenericLangM l (GenericReportT l o m) ()
+abortWith d = toAbort $ format d
 
 toAbort
   :: Monad m

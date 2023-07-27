@@ -25,6 +25,7 @@ library
     , exceptions
     , mtl
     , transformers
+    , utility-ht
   default-language: Haskell2010
 
 test-suite output-monad-test
@@ -43,4 +44,5 @@ test-suite output-monad-test
     , mtl
     , output-monad
     , transformers
+    , utility-ht
   default-language: Haskell2010

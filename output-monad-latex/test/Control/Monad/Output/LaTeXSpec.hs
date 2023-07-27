@@ -44,13 +44,13 @@ spec =
       return (tex German == tex English) `shouldReturn` True
     it "output should evaluate to Just ()" $ do
       evalLangM language `shouldReturn` Just ()
-    it "should   throw an exception on evaluating a refusion using toLaTeX" $
+    it "should throw an exception on evaluating a refusion using toLaTeX" $
       do o <- render . ($ English) <$> toLaTeX (unLangM abort)
          print o
       `shouldThrow` anyErrorCall
     it "should abort at refusion (and not earlier)" $
       render . ($ English) <$> execLangM abort
-      `shouldReturn` " a \n\n True \\begin{quote}Yes.\\end{quote}\n\n"
+      `shouldReturn` " a \n\n True \\begin{quote}Yes.\\end{quote}\n\n False \\begin{quote}No.\\end{quote}\n\n"
     it "abort should evaluate to Nothing" $
       evalLangM abort `shouldReturn` Nothing
   where
