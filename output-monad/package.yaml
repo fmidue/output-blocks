@@ -1,4 +1,5 @@
 name: output-monad
+version: 0.1
 extra-source-files: []
 build-tools: []
 ghc-options:

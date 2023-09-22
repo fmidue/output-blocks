@@ -30,9 +30,6 @@ module Control.Monad.Output.Generic (
   recoverFrom,
   recoverWith,
   toAbort,
-  -- * Isolated OutputMonad
-  IsolatedOutput (..),
-  runIsolated,
   -- * Translation
   mapLangM,
   -- * Helper functions
@@ -60,14 +57,11 @@ import Control.Monad.Output.Report.Generic (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
-import Control.Exception.Base           (Exception, displayException)
 import Control.Monad                    (unless, void)
-import Control.Monad.IO.Class           (MonadIO (liftIO))
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
-import Control.Monad.Catch              (MonadCatch(catch))
 import Data.Foldable                    (foldl', sequenceA_, traverse_)
 import Data.Functor.Identity            (Identity (Identity))
 import Data.Map                         (Map)
@@ -309,18 +303,3 @@ runLangMReportMultiLang neutral f toO lm = do
       case x of
         Format o -> f xs o
         Localised m -> f xs $ toO m
-
-data OutputException = Refused | AssertionFailed deriving Show
-instance Exception OutputException
-
-newtype IsolatedOutput m a = IsolatedOutput { runOutput :: m a }
-  deriving (Applicative, Functor, Monad)
-
-deriving instance GenericOutputMonad l m
-  => GenericOutputMonad l (IsolatedOutput m)
-
-runIsolated :: forall m. (MonadIO m, MonadCatch m) => IsolatedOutput m () -> m ()
-runIsolated = flip catch handleExeption . runOutput
-  where
-    handleExeption :: OutputException -> m ()
-    handleExeption = liftIO . (putStrLn . displayException)

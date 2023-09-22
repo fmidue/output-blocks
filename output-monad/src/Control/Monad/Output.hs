@@ -85,8 +85,6 @@ import Control.Monad.Output.Report (
   toOutput,
   )
 
-import Control.Exception                (throwIO)
-import Control.Exception.Base           (Exception)
 import Control.Monad                    (unless, when)
 import Control.Monad.State              (State, execState, modify)
 import Control.Monad.Trans              (MonadTrans (lift))
@@ -258,13 +256,20 @@ type OutputMonad m = GenericOutputMonad Language m
 out :: Monad m => GenericOut l o -> GenericLangM l (GenericReportT l o m) ()
 out = lift . Report . tell . (:[])
 
-data OutputException = Refused | AssertionFailed deriving Show
-instance Exception OutputException
-
 instance (l ~ Language)
   => GenericOutputMonad l (GenericReportT l (IO ()) IO)
   where
-  assertion b m = m *> unless b (format $ putStrLn "" >> throwIO AssertionFailed)
+  assertion b m = do
+    m
+    indent $ translate $
+      if b
+      then do
+        english "No"
+        german "Nein"
+      else do
+        english "Yes"
+        german "Ja"
+    pure ()
   image         = format . putStr . ("file: " ++)
   images g f    = format . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
@@ -282,13 +287,7 @@ instance (l ~ Language)
     xs
     format $ putStrLn "<<<<"
     pure ()
-  refuse xs     = do
-    xs
-    indent $ translate $ do
-      english "No"
-      german "Nein"
-    format $ throwIO Refused
-    pure ()
+  refuse        = toAbort
   latex         = format . putStrLn . ("LaTeX: " ++)
   code          = format . putStr . (\xs -> " <" ++ xs ++ "> ")
   translatedCode lm =
