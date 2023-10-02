@@ -36,7 +36,7 @@ import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe)
 
 data Language = English | German
-  deriving (Bounded, Enum, Eq, Ord)
+  deriving (Bounded, Enum, Eq, Ord, Read, Show)
 
 type ReportT = GenericReportT Language
 type Out = GenericOut Language
