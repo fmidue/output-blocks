@@ -143,8 +143,8 @@ multipleChoice what msolutionString solution choices =
       (toMapping (M.keys solution) cs)
     isCorrect = null [c | c <- cs, c `notElem` valid]
     correctnessCheck = yesNo isCorrect $ multiLang [
-      (English, "The given " ++ localise English what ++ " are correct?"),
-      (German, "Die angegebenen " ++ localise German what ++ " sind korrekt?")
+      (English, "All given " ++ localise English what ++ " are correct?"),
+      (German, "Alle angegebenen " ++ localise German what ++ " sind korrekt?")
       ]
     exhaustivenessCheck =  when isCorrect $ yesNo (cs ==  valid) $ multiLang [
       (English, "The given " ++ localise English what ++ " are exhaustive?"),
