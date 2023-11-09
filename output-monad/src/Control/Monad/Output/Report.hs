@@ -3,6 +3,7 @@ This module provides a basic 'Language' type and functions for using it
 as well as to this 'Language' specified versions of the generic report
 and output.
 -}
+{-# LANGUAGE DeriveGeneric #-}
 module Control.Monad.Output.Report (
   module GenericReport,
   GenericOut (..),
@@ -34,9 +35,10 @@ import Control.Monad.Identity           (Identity)
 import Control.Monad.State              (State, execState, modify)
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe)
+import GHC.Generics                     (Generic)
 
 data Language = English | German
-  deriving (Bounded, Enum, Eq, Ord, Read, Show)
+  deriving (Bounded, Enum, Eq, Generic, Ord, Read, Show)
 
 type ReportT = GenericReportT Language
 type Out = GenericOut Language
