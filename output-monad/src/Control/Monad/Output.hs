@@ -259,17 +259,8 @@ out = lift . Report . tell . (:[])
 instance (l ~ Language)
   => GenericOutputMonad l (GenericReportT l (IO ()) IO)
   where
-  assertion b m = do
-    m
-    indent $ translate $
-      if b
-      then do
-        english "No"
-        german "Nein"
-      else do
-        english "Yes"
-        german "Ja"
-    pure ()
+  assertion p m = (if p then id else refuse)
+    $ yesNo p m
   image         = format . putStr . ("file: " ++)
   images g f    = format . putStrLn . foldrWithKey
     (\k x rs -> g k ++ ". file: " ++ f x ++ '\n' : rs)
