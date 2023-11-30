@@ -8,7 +8,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
-{-# OPTIONS_GHC -Wwarn=star-is-type #-}
 {- |
 This module provides common skeletons for creating multilingual output.
 Provided interfaces can be used to generate simultaneous multilingual output
@@ -62,6 +61,7 @@ import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
+import Data.Kind                        (Type)
 import Data.Foldable                    (foldl', sequenceA_, traverse_)
 import Data.Functor.Identity            (Identity (Identity))
 import Data.Map                         (Map)
@@ -128,7 +128,7 @@ x $>> y = LangM $ unLangM x >> unLangM y
 class (GenericOutputMonad l m, Monad (RunMonad l m))
   => RunnableOutputMonad l m where
   -- | the monad handling multilingual output
-  type RunMonad l m :: * -> *
+  type RunMonad l m :: Type -> Type
   type Output l m
   runLangM
     :: GenericLangM l m a
