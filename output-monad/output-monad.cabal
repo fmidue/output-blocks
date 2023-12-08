@@ -16,6 +16,7 @@ library
   other-modules:
       Control.Monad.Output.Report
       Control.Monad.Output.Report.Generic
+      Control.Monad.Report
       Paths_output_monad
   hs-source-dirs:
       src

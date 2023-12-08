@@ -8,7 +8,6 @@ import Control.Monad.Output (
   LangM',
   LangM,
   Language,
-  Rated,
   )
 import Control.Monad.Output.Generic (
   runLangMReport,
@@ -28,14 +27,12 @@ showDescription language generate f = do
   run language (f inst)
 
 testTask
-  :: (m ~ GenericReportT Language (IO ()) IO,
-      mr ~ GenericReportT Language (IO Rational) IO,
-      Show a)
+  :: (m ~ GenericReportT Language (IO ()) IO, Show a, Show b, Show c, Show d)
   => Language
   -> IO inst
-  -> (inst -> LangM m)
-  -> (inst -> a -> LangM m)
-  -> (inst -> a -> Rated mr)
+  -> (inst -> LangM' m b)
+  -> (inst -> a -> LangM' m c)
+  -> (inst -> a -> LangM' m d)
   -> IO a
   -> IO ()
 testTask language generate f partial full getSubmission = do
@@ -49,7 +46,7 @@ testTask language generate f partial full getSubmission = do
   partialRes <- run language (partial inst value)
   print partialRes
   putStrLn "---- Complete ----"
-  completeRes <- runRated language (full inst value)
+  completeRes <- run language (full inst value)
   print completeRes
 
 checkConfigWith
@@ -60,27 +57,12 @@ checkConfigWith
   -> IO Bool
 checkConfigWith language conf check = isJust <$> run language (check conf)
 
-runDefault
-  :: (m ~ GenericReportT Language (IO a) IO)
-  => a
-  -> Language
-  -> LangM' m a
-  -> IO (Maybe a)
-runDefault x language thing = do
-  (r, sayThing) <- runLangMReport (pure x) (>>) thing
-  void $ sayThing language
-  pure r
-
 run
   :: (m ~ GenericReportT Language (IO ()) IO)
   => Language
-  -> LangM m
-  -> IO (Maybe ())
-run = runDefault ()
-
-runRated
-  :: (m ~ GenericReportT Language (IO Rational) IO)
-  => Language
-  -> Rated m
-  -> IO (Maybe Rational)
-runRated = runDefault 0
+  -> LangM' m a
+  -> IO (Maybe a)
+run language thing = do
+  (r, sayThing) <- runLangMReport (pure ()) (>>) thing
+  void $ sayThing language
+  pure r
