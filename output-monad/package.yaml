@@ -22,16 +22,17 @@ library:
   source-dirs: src
   exposed-modules:
     - Control.Monad.Output
+    - Control.Monad.Output.Debug
     - Control.Monad.Output.Generic
 tests:
   output-monad-test:
     main: Spec.hs
     source-dirs:
-    - test
+      - test
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - output-monad
-    - hspec
+      - output-monad
+      - hspec
