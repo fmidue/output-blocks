@@ -5,11 +5,12 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           output-monad
-version:        0.1.0.1
+version:        0.1.0.2
 build-type:     Simple
 
 library
   exposed-modules:
+      Control.Functor.Trans
       Control.Monad.Output
       Control.Monad.Output.Debug
       Control.Monad.Output.Generic

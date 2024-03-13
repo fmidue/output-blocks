@@ -5,10 +5,12 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wwarn=star-is-type #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 -- | This module provides common skeletons for printing tasks
 module Control.Monad.Output (
+  FunctorTrans (..),
   -- * Report monad
   GenericOut (..),
   GenericReportT (..),
@@ -57,6 +59,7 @@ module Control.Monad.Output (
 
 import qualified Data.Map as M
 
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad.Output.Generic (
   GenericLangM (..),
   GenericOutputMonad (..),
@@ -87,7 +90,6 @@ import Control.Monad.Output.Report (
 
 import Control.Monad                    (unless, when)
 import Control.Monad.State              (State, execState, modify)
-import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Writer (
   MonadWriter (tell),
   )

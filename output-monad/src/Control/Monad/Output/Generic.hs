@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE TypeOperators #-}
 {- |
 This module provides common skeletons for creating multilingual output.
 Provided interfaces can be used to generate simultaneous multilingual output
@@ -14,6 +15,7 @@ as well as output which can be rendered in different Languages
 (when the specific Language is provided)
 -}
 module Control.Monad.Output.Generic (
+  FunctorTrans (..),
   -- * Monad for translations
   GenericLangM (LangM, unLangM),
   GenericReportT (..),
@@ -55,8 +57,8 @@ import Control.Monad.Output.Report.Generic (
   )
 
 import Control.Applicative              (Alternative ((<|>)))
+import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (unless, void)
-import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
@@ -68,7 +70,7 @@ import Data.Map                         (Map)
 newtype GenericLangM l m a = LangM { unLangM :: m a }
   deriving (Applicative, Functor)
 
-instance MonadTrans (GenericLangM l) where
+instance FunctorTrans (GenericLangM l) where
   lift = LangM
 
 class (Applicative m, Ord l) => GenericOutputMonad l m where

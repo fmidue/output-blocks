@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeOperators #-}
 -- | Provides common functions for running Output-Monad within IO
 
 module Control.Monad.Output.Debug where
