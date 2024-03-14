@@ -1,3 +1,4 @@
+{-# LANGUAGE QuantifiedConstraints #-}
 -- |
 
 module Control.Functor.Trans (
@@ -15,6 +16,6 @@ i.e. it should satisfy the following laws:
 * @'lift' (m >> f) = 'lift' m *> ('lift' . f)@
 --
 -}
-class FunctorTrans t where
+class (forall m. Functor m => Functor (t m)) => FunctorTrans t where
   -- | Lift a computation from the argument monad to the constructed functor.
   lift :: Functor f => f a -> t f a
