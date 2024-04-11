@@ -14,6 +14,7 @@ ghc-options:
 dependencies:
   - base
   - containers
+  - extra
   - mtl
   - transformers
   - utility-ht
@@ -25,6 +26,7 @@ library:
     - Control.Monad.Output
     - Control.Monad.Output.Debug
     - Control.Monad.Output.Generic
+    - Control.Monad.Output.Part
 tests:
   output-monad-test:
     main: Spec.hs
@@ -36,4 +38,6 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - output-monad
+      - generic-random
       - hspec
+      - QuickCheck
