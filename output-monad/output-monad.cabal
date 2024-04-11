@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -14,6 +14,7 @@ library
       Control.Monad.Output
       Control.Monad.Output.Debug
       Control.Monad.Output.Generic
+      Control.Monad.Output.Part
   other-modules:
       Control.Monad.Output.Report
       Control.Monad.Output.Report.Generic
@@ -25,6 +26,7 @@ library
       base
     , containers
     , exceptions
+    , extra
     , mtl
     , transformers
     , utility-ht
@@ -34,14 +36,18 @@ test-suite output-monad-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Control.Monad.Output.PartSpec
       Paths_output_monad
   hs-source-dirs:
       test
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base
+      QuickCheck
+    , base
     , containers
     , exceptions
+    , extra
+    , generic-random
     , hspec
     , mtl
     , output-monad
