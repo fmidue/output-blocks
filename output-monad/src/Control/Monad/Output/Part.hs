@@ -96,14 +96,14 @@ toOutputMonad parts = for_ parts toInterface
 
 
 
--- | Converts non graded OutputMonad value into a list of OutputParts
+-- | Converts non graded OutputMonad value using OutputPart into a list of OutputParts
 getOutputParts :: Monad m => LangM (ReportT OutputPart m) -> m [OutputPart]
 getOutputParts = (snd <$>) . getOutputPartsAnyResult
 
 
 
 -- | More concretely typed alias of getOutputPartsAnyResult
---   Converts graded OutputMonad value into a rating and a list of OutputParts
+--   Converts graded OutputMonad value using OutputPart into a rating and a list of OutputParts
 getOutputPartsWithRating
   :: Monad m
   => Rated (ReportT OutputPart m)
@@ -112,7 +112,7 @@ getOutputPartsWithRating = getOutputPartsAnyResult
 
 
 
--- | Converts OutputMonad value into a result and a list of OutputParts
+-- | Converts OutputMonad value using OutputPart into a result and a list of OutputParts
 getOutputPartsAnyResult
   :: Monad m
   => LangM' (ReportT OutputPart m) a
