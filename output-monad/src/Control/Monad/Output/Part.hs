@@ -22,7 +22,11 @@ import GHC.Generics                 (Generic)
 import qualified Data.Map as Map
 
 
-
+{-|
+Data type miming the OutputMonad class interface.
+Can be used to Prototype without defining additional instances.
+The result can be converted into any member of the class.
+-}
 data OutputPart
     = Assertion Bool [OutputPart]
     | Image FilePath
@@ -38,6 +42,8 @@ data OutputPart
     deriving (Eq, Generic, Read, Show)
 
 
+
+-- | OutputMonad instances for OutputPart, allowing for free conversion between ADT and interface.
 instance Monad m => GenericOutputMonad Language (ReportT OutputPart m) where
   assertion b = alignOutput (Assertion b)
 
@@ -67,6 +73,8 @@ instance Monad m => GenericOutputMonad Language (ReportT OutputPart m) where
   translated = format . Translated . toMap
 
 
+
+-- | Convert a list of OutputParts into any member of OutputMonad
 toOutputMonad :: OutputMonad m => [OutputPart] -> LangM m
 toOutputMonad parts = for_ parts toInterface
   where
@@ -88,27 +96,28 @@ toOutputMonad parts = for_ parts toInterface
 
 
 
-toMap :: (Bounded l, Enum l, Ord l) => (l -> o) -> Map l o
-toMap f = Map.fromList $ map (second f . dupe) [minBound .. maxBound]
-
-
-
+-- | Converts non graded OutputMonad value into a list of OutputParts
 getOutputParts :: Monad m => LangM (ReportT OutputPart m) -> m [OutputPart]
-getOutputParts = (snd <$>) . getOutputAnyResult
+getOutputParts = (snd <$>) . getOutputPartsAnyResult
 
 
+
+-- | More concretely typed alias of getOutputPartsAnyResult
+--   Converts graded OutputMonad value into a rating and a list of OutputParts
 getOutputPartsWithRating
   :: Monad m
   => Rated (ReportT OutputPart m)
   -> m (Maybe Rational,[OutputPart])
-getOutputPartsWithRating = getOutputAnyResult
+getOutputPartsWithRating = getOutputPartsAnyResult
 
 
-getOutputAnyResult
+
+-- | Converts OutputMonad value into a result and a list of OutputParts
+getOutputPartsAnyResult
   :: Monad m
   => LangM' (ReportT OutputPart m) a
   -> m (Maybe a,[OutputPart])
-getOutputAnyResult lm = second unbox <$>
+getOutputPartsAnyResult lm = second unbox <$>
     runLangMReportMultiLang (Paragraph []) gather ($ English) lm
   where
     gather (Paragraph xs) x = Paragraph (xs ++ [x])
@@ -116,3 +125,8 @@ getOutputAnyResult lm = second unbox <$>
 
     unbox (Paragraph xs) = xs
     unbox  _ = error "this is impossible"
+
+
+
+toMap :: (Bounded l, Enum l, Ord l) => (l -> o) -> Map l o
+toMap f = Map.fromList $ map (second f . dupe) [minBound .. maxBound]
