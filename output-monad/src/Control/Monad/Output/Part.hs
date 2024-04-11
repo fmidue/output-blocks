@@ -55,9 +55,13 @@ instance Monad m => GenericOutputMonad Language (ReportT OutputPart m) where
 
   refuse = alignOutput Refuse
 
-  enumerateM f tups = combineReports (Enumerated . concatMap expose . concat) combine
+  enumerateM f tups = combineReports
+                        (Enumerated . concatMap expose . concat)
+                         combine
     where
-      combine = map (uncurry (combineTwoReports $ curry $ Enumerated . (:[])) . first f) tups
+      combine = uncurry (combineTwoReports . curry $ Enumerated . (:[]))
+              . first f
+            <$> tups
 
       expose (Enumerated list) = list
       expose _                 = error "This is impossible"
