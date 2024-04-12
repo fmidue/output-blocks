@@ -45,6 +45,7 @@ module Control.Monad.Output (
   mapLangM,
   multiLang,
   translate,
+  translateCode,
   translations,
   -- * Helper functions
   ($=<<),
@@ -57,6 +58,11 @@ module Control.Monad.Output (
   ) where
 
 
+import qualified Control.Monad.Output.Generic     as Generic (
+  translate,
+  translateCode,
+  translations,
+  )
 import qualified Data.Map as M
 
 import Control.Functor.Trans            (FunctorTrans (lift))
@@ -89,7 +95,7 @@ import Control.Monad.Output.Report (
   )
 
 import Control.Monad                    (unless, when)
-import Control.Monad.State              (State, execState, modify)
+import Control.Monad.State              (State, modify)
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
@@ -229,11 +235,13 @@ localise l lm = fromMaybe nonExistent $ M.lookup l lm
       | otherwise = snd $ M.findMin lm
 
 translate :: OutputMonad m => State (Map Language String) a -> LangM m
-translate xs = translated $ \l ->
-  fromMaybe "" $ M.lookup l $ translations xs
+translate = Generic.translate
+
+translateCode :: OutputMonad m => State (Map Language String) a -> LangM m
+translateCode = Generic.translateCode
 
 translations :: State (Map k a1) a2 -> Map k a1
-translations = flip execState M.empty
+translations = Generic.translations
 
 english :: String -> State (Map Language String) ()
 english = modify . M.insertWith (flip (++)) English

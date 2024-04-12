@@ -1,5 +1,5 @@
 name: output-monad
-version: 0.1.0.2
+version: 0.1.0.3
 extra-source-files: []
 build-tools: []
 ghc-options:
@@ -26,7 +26,8 @@ library:
     - Control.Monad.Output
     - Control.Monad.Output.Debug
     - Control.Monad.Output.Generic
-    - Control.Monad.Output.Part
+    - Control.Monad.Output.Generic.Type
+    - Control.Monad.Output.Type
 tests:
   output-monad-test:
     main: Spec.hs

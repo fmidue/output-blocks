@@ -1,20 +1,23 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-module Control.Monad.Output.PartSpec (spec) where
+module Control.Monad.Output.Generic.TypeSpec (spec) where
 
 
 import Data.Map                  (Map, fromList, member)
-import Generic.Random            (BaseCase(..), genericArbitraryU')
+import Generic.Random            (BaseCase (..), W, (%), genericArbitrary')
 import Test.Hspec                (Spec, describe, it)
 import Test.QuickCheck           (Arbitrary(..), Gen, chooseInt, forAll, vectorOf)
 import Test.QuickCheck.Monadic   (assert, monadicIO, run)
 
 import Control.Monad.Output      (Language)
-import Control.Monad.Output.Part (OutputPart(..), getOutputParts, toOutputMonad)
+import Control.Monad.Output.Generic.Type (
+  GenericOutput (..),
+  getOutputSequence,
+  toOutputMonad,
+  )
 
-
-
-instance BaseCase OutputPart where
+instance BaseCase (GenericOutput Language a) where
   baseCase = do
     which <- chooseInt (1,5)
     case which of
@@ -33,8 +36,9 @@ instance {-# Overlapping #-} Arbitrary (Map Language String) where
     pure $ fromList $ zip langs texts
 
 
-instance Arbitrary OutputPart where
-  arbitrary = genericArbitraryU'
+instance Arbitrary (GenericOutput Language ()) where
+  arbitrary = genericArbitrary'
+    $ 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % (0 :: W "Special") % ()
 
 
 
@@ -45,9 +49,9 @@ spec = do
              forAll (arbitrary :: Gen (Map Language String)) $
               \langMap -> all (`member` langMap) ([minBound .. maxBound] :: [Language])
 
-    describe "OutputPart" $
+    describe "GenericOutput (without Special)" $
         it "converting to LangM and back yields original value" $
              forAll arbitrary $
-              \outputParts -> monadicIO $ do
-                new <- run $ getOutputParts $ toOutputMonad outputParts
-                assert $ new == outputParts
+              \outputSequence -> monadicIO $ do
+                new <- run $ getOutputSequence $ toOutputMonad pure outputSequence
+                assert $ new == outputSequence
