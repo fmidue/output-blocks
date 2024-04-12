@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           output-monad
-version:        0.1.0.2
+version:        0.1.0.3
 build-type:     Simple
 
 library
@@ -14,7 +14,8 @@ library
       Control.Monad.Output
       Control.Monad.Output.Debug
       Control.Monad.Output.Generic
-      Control.Monad.Output.Part
+      Control.Monad.Output.Generic.Type
+      Control.Monad.Output.Type
   other-modules:
       Control.Monad.Output.Report
       Control.Monad.Output.Report.Generic
@@ -36,7 +37,7 @@ test-suite output-monad-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Control.Monad.Output.PartSpec
+      Control.Monad.Output.Generic.TypeSpec
       Paths_output_monad
   hs-source-dirs:
       test

@@ -40,6 +40,9 @@ module Control.Monad.Output.Generic (
   execLangM,
   runLangMReport,
   runLangMReportMultiLang,
+  translate,
+  translateCode,
+  translations,
   withLang,
   ) where
 
@@ -50,15 +53,19 @@ import qualified Control.Monad.Output.Report.Generic as Report (
   toAbort,
   )
 
+import qualified Data.Map                         as M (empty, lookup)
+
 import Control.Monad.Output.Report.Generic (
   GenericOut (..),
   GenericReportT (..),
   getOutsWithResult,
   )
 
+
 import Control.Applicative              (Alternative ((<|>)))
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.Monad                    (unless, void)
+import Control.Monad.State              (State, execState)
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
@@ -66,6 +73,7 @@ import Data.Kind                        (Type)
 import Data.Foldable                    (foldl', sequenceA_, traverse_)
 import Data.Functor.Identity            (Identity (Identity))
 import Data.Map                         (Map)
+import Data.Maybe                       (fromMaybe)
 
 newtype GenericLangM l m a = LangM { unLangM :: m a }
   deriving (Applicative, Functor)
@@ -256,6 +264,24 @@ instance Ord l => RunnableOutputMonad l Maybe where
   type RunMonad l Maybe = Identity
   type Output l Maybe = ()
   runLangM        = Identity . (, const ()) . unLangM
+
+translate
+  :: GenericOutputMonad language m
+  => State (Map language String) a
+  -> GenericLangM language m ()
+translate xs = translated $ \l ->
+  fromMaybe "" $ M.lookup l $ translations xs
+
+translateCode
+  :: GenericOutputMonad language m
+  => State (Map language String) a
+  -> GenericLangM language m ()
+translateCode xs = translatedCode $ \l ->
+  fromMaybe "" $ M.lookup l $ translations xs
+
+translations :: State (Map language a1) a2 -> Map language a1
+translations = flip execState M.empty
+
 
 {-|
 Provided a neutral element and a function to combine generated output
