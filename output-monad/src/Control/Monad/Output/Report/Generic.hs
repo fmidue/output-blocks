@@ -19,6 +19,7 @@ module Control.Monad.Output.Report.Generic (
 
 import Control.Applicative              (Alternative)
 import Control.Monad                    (void)
+import Control.Monad.Catch              (MonadThrow (throwM))
 import Control.Monad.IO.Class           (MonadIO)
 import Control.Monad.Trans              (MonadTrans (lift))
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
@@ -42,6 +43,9 @@ newtype GenericReportT l o m r =
 
 instance MonadTrans (GenericReportT l o) where
   lift m = Report $ MaybeT $ WriterT $ fmap (\x -> (Just x, [])) m
+
+instance MonadThrow m => MonadThrow (GenericReportT l o m) where
+  throwM = lift . throwM
 
 getOutsWithResult
   :: GenericReportT l o m a
