@@ -1,0 +1,16 @@
+Bifunctor
+GADTs
+GHC
+Hspec
+MReport
+concat
+fmap
+foldl
+foldr
+fst
+includegraphics
+keepaspectratio
+mconcat
+mempty
+snd
+uncurry

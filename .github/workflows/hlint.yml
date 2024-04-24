@@ -1,0 +1,29 @@
+---
+name: Haskell Linter
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+  pull_request:
+    branches:
+      - dev
+      - master
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Set up HLint'
+        uses: haskell-actions/hlint-setup@v2
+        with:
+          version: '3.5'
+
+      - name: 'Run HLint'
+        uses: haskell-actions/hlint-run@v2
+        with:
+          path: '["output-monad/src/", "output-monad/test/", "output-monad-latex/src/", "output-monad-latex/test/"]'
+          fail-on: suggestion

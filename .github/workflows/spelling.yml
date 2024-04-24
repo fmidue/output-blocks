@@ -1,0 +1,48 @@
+---
+name: Check Spelling
+
+on:
+  push:
+    branches: ['**']
+
+jobs:
+  spelling:
+    name: Check Spelling
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    outputs:
+      followup: ${{ steps.spelling.outputs.followup }}
+    runs-on: ubuntu-latest
+    if: "contains(github.event_name, 'pull_request') || github.event_name == 'push'"
+    concurrency:
+      group: spelling-${{ github.event.pull_request.number || github.ref }}
+      # note: If you use only_check_changed_files, you do not want cancel-in-progress
+      cancel-in-progress: true
+    steps:
+      - name: check-spelling
+        id: spelling
+        uses: check-spelling/check-spelling@v0.0.22
+        with:
+          suppress_push_for_open_pull_request: ${{ github.actor != 'dependabot[bot]' && 1 }}
+          checkout: true
+          check_file_names: 1
+          spell_check_this: check-spelling/spell-check-this@prerelease
+          post_comment: 0
+          experimental_apply_changes_via_bot: 0
+          extra_dictionaries:
+            cspell:latex/dict/latex.txt
+            cspell:software-terms/dict/softwareTerms.txt
+            cspell:filetypes/filetypes.txt
+            cspell:haskell/dict/haskell.txt
+            cspell:de_DE/src/German_de_DE.dic
+            cspell:de_DE/src/hunspell/index.dic
+            cspell:en_GB/src/aoo-mozilla-en-dict/en-GB.dic
+            cspell:en_GB/src/hunspell/en_GB.dic
+          ignore-pattern: '[^\p{Ll}\p{Lm}\p{Lt}\p{Lu}]'
+          upper-pattern: '[\p{Lu}\p{Lt}\p{Lm}]'
+          lower-pattern: '[\p{Ll}\p{Lm}]'
+          not-lower-pattern: '[^\p{Ll}\p{Lm}]'
+          not-upper-or-lower-pattern: '[^\p{Lu}\p{Lt}\p{Lm}]'
+          punctuation-pattern: "'"

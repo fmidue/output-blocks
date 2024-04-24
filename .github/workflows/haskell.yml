@@ -1,0 +1,115 @@
+---
+name: Haskell CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        plan:
+          - {resolver: lts-18.28}
+          - {resolver: lts-19.33}
+          - {resolver: lts-20.26}
+          - {resolver: lts-21.25}
+          - {resolver: lts-22.18}
+          - {resolver: nightly}
+        exclude:
+          - os: macOS-latest
+            plan: {resolver: lts-18.28}
+          - os: macOS-latest
+            plan: {resolver: lts-19.33}
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # - name: Install ${{ matrix.os }} Packages
+      #   uses: delgurth/get-package@v6.0.0
+      #   with:
+      #     apt-get: ${{ matrix.apt-get }}
+      #     brew: ${{ matrix.brew }}
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        name: Cache ~/.stack
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-global-
+        if: contains(matrix.os, 'windows') == false
+
+      - uses: actions/cache@v4
+        name: Cache %APPDATA%\stack %LOCALAPPDATA%\Programs\stack
+        with:
+          path: |
+              ~\AppData\Roaming\stack
+              ~\AppData\Local\Programs\stack
+          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-global-
+        if: contains(matrix.os, 'windows')
+
+      - uses: actions/cache@v4
+        name: Cache .stack-work
+        with:
+          path: .stack-work
+          key: ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
+            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}
+            ${{ runner.os }}-stack-work-
+
+      - name: Setup stack
+        uses: haskell-actions/setup@v2
+        with:
+          enable-stack: true
+          stack-no-global: true
+
+      - name: Install dependencies on unix
+        run: |
+          set -ex
+          # shellcheck disable=SC2086
+          stack --no-terminal --install-ghc $ARGS test --bench --only-dependencies
+          set +ex
+        env:
+          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+        if: contains(matrix.os, 'windows') == false
+
+      - name: Install dependencies on windows
+        shell: powershell
+        run: |
+          stack --no-terminal -j 1 --install-ghc ${env:ARGS} test --bench --only-dependencies
+        env:
+          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+        if: contains(matrix.os, 'windows')
+
+      - name: Build on unix
+        run: |
+          set -ex
+          # shellcheck disable=SC2086
+          stack --no-terminal --install-ghc test $ARGS --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
+          set +ex
+        env:
+          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+        if: contains(matrix.os, 'windows') == false
+
+      - name: Build on windows
+        shell: powershell
+        run: |
+          stack --no-terminal --install-ghc test ${env:ARGS} --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
+        env:
+          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+        if: contains(matrix.os, 'windows')
