@@ -1,7 +1,8 @@
+---
 name: output-monad
 version: 0.1.0.3
-extra-source-files: []
-build-tools: []
+extra-source-files: [ ]
+build-tools: [ ]
 ghc-options:
   - -Wall
   - -Wincomplete-uni-patterns
@@ -41,4 +42,4 @@ tests:
       - output-monad
       - generic-random
       - hspec
-      - QuickCheck
+      - QuickCheck >= 2.14

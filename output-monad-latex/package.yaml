@@ -1,6 +1,7 @@
+---
 name: output-monad-latex
-extra-source-files: []
-build-tools: []
+extra-source-files: [ ]
+build-tools: [ ]
 ghc-options:
   - -Wall
   - -Wincomplete-uni-patterns
@@ -26,11 +27,11 @@ tests:
   output-monad-test:
     main: Spec.hs
     source-dirs:
-    - test
+      - test
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - output-monad-latex
-    - hspec
+      - output-monad-latex
+      - hspec
