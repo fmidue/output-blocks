@@ -140,10 +140,10 @@ multipleChoice
   -> Map a Bool
   -> [a]
   -> Rated m
-multipleChoice what msolutionString solution choices =
+multipleChoice what optionalSolutionString solution choices =
   correctnessCheck
   *> exhaustivenessCheck
-  *> printSolutionAndAssert msolutionString points
+  *> printSolutionAndAssert optionalSolutionString points
   where
     cs = sort $ nubOrd choices
     points = percentPer
@@ -165,8 +165,8 @@ printSolutionAndAssert
   => Maybe String
   -> Rational
   -> Rated m
-printSolutionAndAssert msolutionString points = do
-  for_ msolutionString (\solutionString ->
+printSolutionAndAssert optionalSolutionString points = do
+  for_ optionalSolutionString (\solutionString ->
     when (points /= 1) $ paragraph $ do
       translate $ do
         english "The correct solution is:"
@@ -197,13 +197,13 @@ singleChoice
   -> a
   -> a
   -> Rated m
-singleChoice what msolutionString solution choice = do
+singleChoice what optionalSolutionString solution choice = do
   checkCorrect
-  *> printSolutionAndAssert msolutionString points
+  *> printSolutionAndAssert optionalSolutionString points
   where
     correct = solution == choice
     points = if correct then 1 else 0
-    assert = continueOrAbort $ isJust msolutionString
+    assert = continueOrAbort $ isJust optionalSolutionString
     checkCorrect = assert correct $ multiLang [
       (English, "Chosen " ++ localise English what ++ " is correct?"),
       (German, "Der/die/das gewählte " ++ localise German what ++ " ist korrekt?")]
