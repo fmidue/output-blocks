@@ -46,7 +46,7 @@ testTask pretty language generate f partial full getSubmission = do
   putStrLn "---- Input ----"
   print value
   whenJust (($ value) <$> pretty) $ \prettified -> do
-    putStrLn "---- Prettyfied Input ----"
+    putStrLn "---- Prettified Input ----"
     putStrLn prettified
   putStrLn "---- Partial ----"
   partialRes <- run language (partial inst value)
