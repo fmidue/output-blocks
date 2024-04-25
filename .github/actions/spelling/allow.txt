@@ -2,7 +2,9 @@ Bifunctor
 GADTs
 GHC
 Hspec
+Leijen
 MReport
+TStrict
 concat
 fmap
 foldl
