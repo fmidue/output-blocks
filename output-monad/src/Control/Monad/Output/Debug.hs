@@ -47,12 +47,12 @@ data Display a where
   AutoLeijen :: Leijen.Pretty a => Display a
 
 display :: Display a -> a -> String
-display (Manual f) x = f x
-display AutoHughesPJ x = HughesPJ.render $ HughesPJ.pPrint x
-display AutoLeijen x = T.unpack
+display (Manual f) = f
+display AutoHughesPJ = HughesPJ.render . HughesPJ.pPrint
+display AutoLeijen = T.unpack
   . Leijen.displayTStrict
   . Leijen.renderPretty 0.4 80
-  $ Leijen.pretty x
+  . Leijen.pretty
 
 testTask
   :: (m ~ GenericReportT Language (IO ()) IO, Show a, Show b, Show c, Show d)
