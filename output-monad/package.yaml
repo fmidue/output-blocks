@@ -17,9 +17,12 @@ dependencies:
   - containers
   - extra
   - mtl
+  - pretty
+  - text
   - transformers
   - utility-ht
   - exceptions
+  - wl-pprint-text
 library:
   source-dirs: src
   exposed-modules:

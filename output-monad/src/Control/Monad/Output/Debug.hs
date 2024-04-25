@@ -4,6 +4,19 @@
 
 module Control.Monad.Output.Debug where
 
+import qualified Data.Text                        as T (unpack)
+import qualified Text.PrettyPrint.HughesPJClass   as HughesPJ (
+  Pretty,
+  pPrint,
+  render,
+  )
+import qualified Text.PrettyPrint.Leijen.Text     as Leijen (
+  Pretty,
+  displayTStrict,
+  pretty,
+  renderPretty,
+  )
+
 import Control.Monad.Output (
   GenericReportT,
   LangM',
@@ -28,9 +41,22 @@ showDescription language generate f = do
   inst <- generate
   run language (f inst)
 
+data Display a where
+  Manual :: (a -> String) -> Display a
+  AutoHughesPJ :: HughesPJ.Pretty a => Display a
+  AutoLeijen :: Leijen.Pretty a => Display a
+
+display :: Display a -> a -> String
+display (Manual f) x = f x
+display AutoHughesPJ x = HughesPJ.render $ HughesPJ.pPrint x
+display AutoLeijen x = T.unpack
+  . Leijen.displayTStrict
+  . Leijen.renderPretty 0.4 80
+  $ Leijen.pretty x
+
 testTask
   :: (m ~ GenericReportT Language (IO ()) IO, Show a, Show b, Show c, Show d)
-  => Maybe (a -> String)
+  => Maybe (Display a)
   -> Language
   -> IO inst
   -> (inst -> LangM' m b)
@@ -45,9 +71,9 @@ testTask pretty language generate f partial full getSubmission = do
   value <- getSubmission
   putStrLn "---- Input ----"
   print value
-  whenJust (($ value) <$> pretty) $ \prettified -> do
+  whenJust pretty $ \displayMethod -> do
     putStrLn "---- Prettified Input ----"
-    putStrLn prettified
+    putStrLn $ display displayMethod value
   putStrLn "---- Partial ----"
   partialRes <- run language (partial inst value)
   print partialRes
