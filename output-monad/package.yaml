@@ -1,6 +1,6 @@
 ---
 name: output-monad
-version: 0.1.0.4
+version: 0.1.0.5
 extra-source-files: [ ]
 build-tools: [ ]
 ghc-options:

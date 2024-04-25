@@ -14,8 +14,9 @@ import Control.Monad.Output.Generic (
   runLangMReport,
   )
 
-import Control.Monad                    (void)
-import Data.Maybe                       (isJust)
+import Control.Monad                    (void, when)
+import Control.Monad.Extra              (whenJust)
+import Data.Maybe                       (isJust, isNothing)
 
 showDescription
   :: (m ~ GenericReportT Language (IO ()) IO)
@@ -29,23 +30,29 @@ showDescription language generate f = do
 
 testTask
   :: (m ~ GenericReportT Language (IO ()) IO, Show a, Show b, Show c, Show d)
-  => Language
+  => Maybe (a -> String)
+  -> Language
   -> IO inst
   -> (inst -> LangM' m b)
   -> (inst -> a -> LangM' m c)
   -> (inst -> a -> LangM' m d)
   -> IO a
   -> IO ()
-testTask language generate f partial full getSubmission = do
+testTask pretty language generate f partial full getSubmission = do
   inst <- generate
   desc <- run language (f inst)
   print desc
   value <- getSubmission
   putStrLn "---- Input ----"
   print value
+  whenJust (($ value) <$> pretty) $ \prettified -> do
+    putStrLn "---- Prettyfied Input ----"
+    putStrLn prettified
   putStrLn "---- Partial ----"
   partialRes <- run language (partial inst value)
   print partialRes
+  when (isNothing partialRes)
+    $ putStrLn "!!! The following would not be printed in Autotool !!!"
   putStrLn "---- Complete ----"
   completeRes <- run language (full inst value)
   print completeRes
