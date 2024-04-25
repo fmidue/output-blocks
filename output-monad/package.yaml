@@ -1,6 +1,6 @@
 ---
 name: output-monad
-version: 0.1.0.4
+version: 0.1.0.5
 extra-source-files: [ ]
 build-tools: [ ]
 ghc-options:
@@ -17,9 +17,12 @@ dependencies:
   - containers
   - extra
   - mtl
+  - pretty
+  - text
   - transformers
   - utility-ht
   - exceptions
+  - wl-pprint-text
 library:
   source-dirs: src
   exposed-modules:
