@@ -1,0 +1,37 @@
+---
+name: output-blocks-latex
+extra-source-files: [ ]
+build-tools: [ ]
+ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Widentities
+  - -Wredundant-constraints
+  - -Werror
+  - -Wwarn=incomplete-uni-patterns
+  - -Wwarn=orphans
+dependencies:
+  - HaTeX
+  - base
+  - containers
+  - mtl
+  - text
+  - transformers
+  - output-blocks
+library:
+  source-dirs: src
+  exposed-modules:
+    - Control.OutputCapable.Blocks.LaTeX
+tests:
+  output-blocks-test:
+    main: Spec.hs
+    source-dirs:
+      - test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - output-blocks-latex
+      - hspec

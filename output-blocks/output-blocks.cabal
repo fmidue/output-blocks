@@ -1,0 +1,64 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           output-blocks
+version:        0.2
+build-type:     Simple
+
+library
+  exposed-modules:
+      Control.Functor.Trans
+      Control.OutputCapable.Blocks
+      Control.OutputCapable.Blocks.Debug
+      Control.OutputCapable.Blocks.Generic
+      Control.OutputCapable.Blocks.Generic.Type
+      Control.OutputCapable.Blocks.Type
+  other-modules:
+      Control.OutputCapable.Blocks.Report
+      Control.OutputCapable.Blocks.Report.Generic
+      Control.OutputCapable.Report
+      Paths_output_blocks
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
+  build-depends:
+      base
+    , containers
+    , exceptions
+    , extra
+    , mtl
+    , pretty
+    , text
+    , transformers
+    , utility-ht
+    , wl-pprint-text
+  default-language: Haskell2010
+
+test-suite output-blocks-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Control.OutputCapable.Blocks.Generic.TypeSpec
+      Paths_output_blocks
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck >=2.14
+    , base
+    , containers
+    , exceptions
+    , extra
+    , generic-random
+    , hspec
+    , mtl
+    , output-blocks
+    , pretty
+    , text
+    , transformers
+    , utility-ht
+    , wl-pprint-text
+  default-language: Haskell2010

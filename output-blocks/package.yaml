@@ -1,0 +1,48 @@
+---
+name: output-blocks
+version: 0.2
+extra-source-files: [ ]
+build-tools: [ ]
+ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Widentities
+  - -Wredundant-constraints
+  - -Werror
+  - -Wwarn=incomplete-uni-patterns
+  - -Wwarn=orphans
+dependencies:
+  - base
+  - containers
+  - extra
+  - mtl
+  - pretty
+  - text
+  - transformers
+  - utility-ht
+  - exceptions
+  - wl-pprint-text
+library:
+  source-dirs: src
+  exposed-modules:
+    - Control.Functor.Trans
+    - Control.OutputCapable.Blocks
+    - Control.OutputCapable.Blocks.Debug
+    - Control.OutputCapable.Blocks.Generic
+    - Control.OutputCapable.Blocks.Generic.Type
+    - Control.OutputCapable.Blocks.Type
+tests:
+  output-blocks-test:
+    main: Spec.hs
+    source-dirs:
+      - test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - output-blocks
+      - generic-random
+      - hspec
+      - QuickCheck >= 2.14

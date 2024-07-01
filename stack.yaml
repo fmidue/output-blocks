@@ -1,6 +1,6 @@
 ---
 resolver: lts-21.25
 packages:
-  - output-monad
-  - output-monad-latex
+  - output-blocks
+  - output-blocks-latex
 extra-deps:
