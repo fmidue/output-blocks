@@ -19,7 +19,6 @@ library
   other-modules:
       Control.OutputCapable.Blocks.Report
       Control.OutputCapable.Blocks.Report.Generic
-      Control.OutputCapable.Report
       Paths_output_blocks
   hs-source-dirs:
       src
