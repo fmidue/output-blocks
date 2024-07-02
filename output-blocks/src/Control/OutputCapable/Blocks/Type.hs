@@ -44,7 +44,7 @@ import qualified Control.OutputCapable.Blocks.Generic.Type as Generic (
 import Control.OutputCapable.Blocks.Generic.Type (GenericOutput (..))
 import Control.OutputCapable.Blocks (
   LangM,
-  Language,
+  Language (English),
   OutputCapable,
   Rated,
   ReportT,
@@ -54,13 +54,13 @@ type SpecialOutput = GenericOutput Language
 type Output = SpecialOutput ()
 
 getOutputSequence :: Functor m => LangM (ReportT Output m) -> m [Output]
-getOutputSequence = Generic.getOutputSequence undefined
+getOutputSequence = Generic.getOutputSequence English
 
 getOutputSequenceWithRating
   :: Functor m
   => Rated (ReportT Output m)
   -> m (Maybe Rational, [Output])
-getOutputSequenceWithRating = Generic.getOutputSequenceWithRating undefined
+getOutputSequenceWithRating = Generic.getOutputSequenceWithRating English
 
 toOutputCapable :: OutputCapable m => [Output] -> LangM m
 toOutputCapable = Generic.toOutputCapable pure
@@ -69,13 +69,13 @@ getSpecialOutputSequence
   :: Functor m
   => LangM (ReportT (SpecialOutput element) m)
   -> m [SpecialOutput element]
-getSpecialOutputSequence = Generic.getOutputSequence undefined
+getSpecialOutputSequence = Generic.getOutputSequence English
 
 getSpecialOutputSequenceWithRating
   :: Functor m
   => Rated (ReportT (SpecialOutput element) m)
   -> m (Maybe Rational, [SpecialOutput element])
-getSpecialOutputSequenceWithRating = Generic.getOutputSequenceWithRating undefined
+getSpecialOutputSequenceWithRating = Generic.getOutputSequenceWithRating English
 
 specialToOutputCapable
   :: OutputCapable m

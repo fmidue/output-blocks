@@ -8,13 +8,6 @@ module Control.OutputCapable.Blocks.Generic.Type
     , toOutputCapable
     ) where
 
-import Control.OutputCapable.Blocks (
-  LangM',
-  LangM,
-  Language (English),
-  Rated,
-  ReportT,
-  )
 import Control.OutputCapable.Blocks.Generic (
   GenericLangM,
   GenericOutputCapable (..),
@@ -165,8 +158,8 @@ getOutputSequenceAndResult
   => language
   -> GenericLangM language (GenericReportT language (GenericOutput language element) m) a
   -> m (Maybe a, [GenericOutput language element])
-getOutputSequenceAndResult _ lm = second unbox <$>
-    runLangMReportMultiLang (Paragraph []) gather undefined lm
+getOutputSequenceAndResult language lm = second unbox <$>
+    runLangMReportMultiLang (Paragraph []) gather ($ language) lm
   where
     gather (Paragraph xs) x = Paragraph (xs ++ [x])
     gather  _ _ = error "this is impossible"

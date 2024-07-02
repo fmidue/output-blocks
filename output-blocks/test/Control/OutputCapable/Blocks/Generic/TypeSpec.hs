@@ -10,7 +10,7 @@ import Test.Hspec                (Spec, describe, it)
 import Test.QuickCheck           (Arbitrary(..), Gen, chooseInt, forAll, vectorOf)
 import Test.QuickCheck.Monadic   (assert, monadicIO, run)
 
-import Control.OutputCapable.Blocks     (Language)
+import Control.OutputCapable.Blocks     (Language (English))
 import Control.OutputCapable.Blocks.Generic.Type (
   GenericOutput (..),
   getOutputSequence,
@@ -53,5 +53,6 @@ spec = do
         it "converting to LangM and back yields original value" $
              forAll arbitrary $
               \outputSequence -> monadicIO $ do
-                new <- run $ getOutputSequence $ toOutputCapable pure outputSequence
+                new <- run $ getOutputSequence English
+                  $ toOutputCapable pure outputSequence
                 assert $ new == outputSequence
