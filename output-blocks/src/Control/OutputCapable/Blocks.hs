@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -39,6 +40,7 @@ module Control.OutputCapable.Blocks (
   recoverWith,
   toAbort,
   -- * Translation
+  ArticleToUse (..),
   english,
   german,
   localise,
@@ -105,6 +107,7 @@ import Data.List                        (sort)
 import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
 import Data.Ratio                       ((%))
+import GHC.Generics                     (Generic)
 
 {-|
 If argument is 'True',
@@ -135,15 +138,16 @@ yesNo p q = do
 
 multipleChoice
   :: (OutputCapable m, Ord a)
-  => Map Language String
+  => ArticleToUse
+  -> Map Language String
   -> Maybe String
   -> Map a Bool
   -> [a]
   -> Rated m
-multipleChoice what optionalSolutionString solution choices =
+multipleChoice articleToUse what optionalSolutionString solution choices =
   correctnessCheck
   *> exhaustivenessCheck
-  *> printSolutionAndAssert optionalSolutionString points
+  *> printSolutionAndAssert articleToUse optionalSolutionString points
   where
     cs = sort $ nubOrd choices
     points = percentPer
@@ -160,17 +164,32 @@ multipleChoice what optionalSolutionString solution choices =
       ]
     valid = M.keys $ M.filter id solution
 
+{-|
+Use the specified article.
+-}
+data ArticleToUse
+  = DefiniteArticle
+  -- ^ use definite article(s)
+  | IndefiniteArticle
+  -- ^ use indefinite article(s)
+  deriving (Eq, Generic, Read, Show)
+
 printSolutionAndAssert
   :: OutputCapable m
-  => Maybe String
+  => ArticleToUse
+  -> Maybe String
   -> Rational
   -> Rated m
-printSolutionAndAssert optionalSolutionString points = do
+printSolutionAndAssert articleToUse optionalSolutionString points = do
   for_ optionalSolutionString (\solutionString ->
     when (points /= 1) $ paragraph $ do
-      translate $ do
-        english "The correct solution is:"
-        german "Die richtige Lösung ist:"
+      translate $ case articleToUse of
+        DefiniteArticle -> do
+          english "The correct solution is:"
+          german "Die richtige Lösung ist:"
+        IndefiniteArticle -> do
+          english "A correct solution is:"
+          german "Eine richtige Lösung ist:"
       code solutionString
       pure ()
     )
@@ -192,14 +211,15 @@ singleChoiceSyntax withSolution options choice =
 
 singleChoice
   :: (OutputCapable m, Eq a)
-  => Map Language String
+  => ArticleToUse
+  -> Map Language String
   -> Maybe String
   -> a
   -> a
   -> Rated m
-singleChoice what optionalSolutionString solution choice = do
+singleChoice articleToUse what optionalSolutionString solution choice = do
   checkCorrect
-  *> printSolutionAndAssert optionalSolutionString points
+  *> printSolutionAndAssert articleToUse optionalSolutionString points
   where
     correct = solution == choice
     points = if correct then 1 else 0
