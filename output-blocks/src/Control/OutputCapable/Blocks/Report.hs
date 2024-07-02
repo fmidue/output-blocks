@@ -11,20 +11,27 @@ module Control.OutputCapable.Blocks.Report (
   ReportT,
   Report,
   Language (..),
+  alignOutput,
+  combineReports,
+  combineTwoReports,
   english,
   german,
+  getAllOuts,
   localise,
+  toAbort,
   translations,
   ) where
 
-import Control.OutputCapable.Blocks.Report.Generic as GenericReport (
-  GenericOut (..),
+import qualified Control.OutputCapable.Blocks.Report.Generic as GenericReport (
   alignOutput,
   combineReports,
   combineTwoReports,
   getAllOuts,
-  getOutsWithResult,
   toAbort,
+  )
+import Control.OutputCapable.Blocks.Report.Generic as GenericReport (
+  GenericOut (..),
+  getOutsWithResult,
   toOutput,
   )
 import Control.OutputCapable.Blocks.Report.Generic (GenericReportT (..))
@@ -60,3 +67,59 @@ localise l lm = fromMaybe nonExistent $ M.lookup l lm
     nonExistent
       | null lm   = error "missing translation"
       | otherwise = snd $ M.findMin lm
+
+{-|
+This is a specified version of 'GenericReport.getAllOuts'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+getAllOuts :: Monad m => GenericReportT l o m () -> m [GenericOut l o]
+getAllOuts = GenericReport.getAllOuts
+
+{-|
+This is a specified version of 'GenericReport.combineReports'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+combineReports
+  :: Monad m
+  => ([[o]] -> o)
+  -> [GenericReportT l o m ()]
+  -> GenericReportT l o m ()
+combineReports = GenericReport.combineReports
+
+{-|
+This is a specified version of 'GenericReport.alignOutput'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+alignOutput
+  :: Monad m
+  => ([o] -> o)
+  -> GenericReportT l o m ()
+  -> GenericReportT l o m ()
+alignOutput = GenericReport.alignOutput
+
+{-|
+This is a specified version of 'GenericReport.combineTwoReports'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+combineTwoReports
+  :: Monad m
+  => ([o] -> [o] -> o)
+  -> GenericReportT l o m ()
+  -> GenericReportT l o m ()
+  -> GenericReportT l o m ()
+combineTwoReports = GenericReport.combineTwoReports
+
+{-|
+This is a specified version of 'GenericReport.toAbort'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+toAbort
+  :: Monad m
+  => GenericReportT l o m ()
+  -> GenericReportT l o m ()
+toAbort = GenericReport.toAbort

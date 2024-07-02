@@ -61,6 +61,10 @@ module Control.OutputCapable.Blocks (
 
 
 import qualified Control.OutputCapable.Blocks.Generic as Generic (
+  alignOutput,
+  combineReports,
+  combineTwoReports,
+  toAbort,
   translate,
   translateCode,
   translations,
@@ -75,14 +79,10 @@ import Control.OutputCapable.Blocks.Generic (
   RunnableOutputCapable (..),
   ($=<<),
   abortWith,
-  alignOutput,
-  combineReports,
-  combineTwoReports,
   format,
   recoverFrom,
   recoverWith,
   runLangMReport,
-  toAbort,
   mapLangM,
   )
 import Control.OutputCapable.Blocks.Report (
@@ -254,13 +254,34 @@ localise l lm = fromMaybe nonExistent $ M.lookup l lm
       | null lm   = error "missing translation"
       | otherwise = snd $ M.findMin lm
 
-translate :: OutputCapable m => State (Map Language String) a -> LangM m
+{-|
+This is a specified version of 'Generic.translate'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+translate
+  :: GenericOutputCapable l m
+  => State (Map l String) ()
+  -> GenericLangM l m ()
 translate = Generic.translate
 
-translateCode :: OutputCapable m => State (Map Language String) a -> LangM m
+{-|
+This is a specified version of 'Generic.translateCode'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+translateCode
+  :: GenericOutputCapable l m
+  => State (Map l String) ()
+  -> GenericLangM l m ()
 translateCode = Generic.translateCode
 
-translations :: State (Map k a1) a2 -> Map k a1
+{-|
+This is a specified version of 'Generic.translations'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+translations :: State (Map l a) () -> Map l a
 translations = Generic.translations
 
 english :: String -> State (Map Language String) ()
@@ -274,11 +295,11 @@ type LangM m = LangM' m ()
 type Rated m = LangM' m Rational
 
 enumerate
-  :: OutputCapable m
+  :: GenericOutputCapable l m
   => (k -> String)
   -> (a -> String)
   -> Map k a
-  -> LangM m
+  -> GenericLangM l m ()
 enumerate f g m = enumerateM (text . f) (M.toList $ text . g <$> m)
 
 type OutputCapable m = GenericOutputCapable Language m
@@ -321,3 +342,51 @@ instance l ~ Language
   type RunMonad l (GenericReportT l (IO ()) IO) = IO
   type Output l (GenericReportT l (IO ()) IO) = IO ()
   runLangM = runLangMReport (return ()) (>>)
+
+{-|
+This is a specified version of 'Generic.combineReports'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+combineReports
+  :: Monad m
+  => ([[o]] -> o)
+  -> [GenericLangM l (GenericReportT l o m) ()]
+  -> GenericLangM l (GenericReportT l o m) ()
+combineReports = Generic.combineReports
+
+{-|
+This is a specified version of 'Generic.alignOutput'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+alignOutput
+  :: Monad m
+  => ([o] -> o)
+  -> GenericLangM l (GenericReportT l o m) ()
+  -> GenericLangM l (GenericReportT l o m) ()
+alignOutput = Generic.alignOutput
+
+{-|
+This is a specified version of 'Generic.combineTwoReports'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+combineTwoReports
+  :: Monad m
+  => ([o] -> [o] -> o)
+  -> GenericLangM l (GenericReportT l o m) ()
+  -> GenericLangM l (GenericReportT l o m) ()
+  -> GenericLangM l (GenericReportT l o m) ()
+combineTwoReports = Generic.combineTwoReports
+
+{-|
+This is a specified version of 'Generic.toAbort'
+which enforces the usage pattern.
+You should always prefer this specified version over the generic.
+-}
+toAbort
+  :: Monad m
+  => GenericLangM l (GenericReportT l o m) ()
+  -> GenericLangM l (GenericReportT l o m) ()
+toAbort = Generic.toAbort

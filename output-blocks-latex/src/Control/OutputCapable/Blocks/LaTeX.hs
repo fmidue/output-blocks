@@ -33,7 +33,7 @@ import Control.OutputCapable.Blocks.Generic (
 
 import Control.Monad.Writer (MonadWriter (tell))
 import Data.Bifunctor (first)
-import Data.Foldable (Foldable (foldl'))
+import Data.Foldable                    (Foldable (foldl'), sequenceA_)
 import Data.Text (pack)
 import Text.LaTeX.Base.Syntax (
   LaTeX (TeXComm, TeXEnv, TeXRaw),
@@ -115,7 +115,8 @@ instance GenericOutputCapable Language (ReportT LaTeX IO) where
         TeXComm "item" [OptArg $ mconcat x', FixArg $ mconcat y']
         <> newline
   itemizeM = alignOutput
-    (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty) . sequenceA
+    (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty)
+    . sequenceA_
   latex = format . TeXRaw . pack . ('$':) . (++ "$")
   code = format . TeXEnv "verbatim" [] . TeXRaw . pack
   translatedCode lm = LangM
