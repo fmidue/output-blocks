@@ -134,10 +134,11 @@ Converts non graded 'GenericOutputCapable' value using 'GenericOutput'
 into a list of 'GenericOutput'
 -}
 getOutputSequence
-  :: Monad m
-  => LangM (ReportT (GenericOutput language element) m)
+  :: Functor m
+  => language
+  -> GenericLangM language (GenericReportT language (GenericOutput language element) m) ()
   -> m [GenericOutput language element]
-getOutputSequence = (snd <$>) . getOutputSequenceAndResult
+getOutputSequence f = (snd <$>) . getOutputSequenceAndResult f
 
 
 
@@ -148,11 +149,11 @@ Converts graded 'GenericOutputCapable' value using 'GenericOutput'
 into a rating and a list of 'GenericOutput'
 -}
 getOutputSequenceWithRating
-  :: Monad m
-  => Rated (ReportT (GenericOutput language element) m)
+  :: Functor m
+  => language
+  -> GenericLangM language (GenericReportT language (GenericOutput language element) m) Rational
   -> m (Maybe Rational, [GenericOutput language element])
 getOutputSequenceWithRating = getOutputSequenceAndResult
-
 
 
 {-|
@@ -160,11 +161,12 @@ Converts 'GenericOutputCapable' value using 'GenericOutput'
 into a result and a list of 'GenericOutput'
 -}
 getOutputSequenceAndResult
-  :: Monad m
-  => LangM' (ReportT (GenericOutput language element) m) a
+  :: Functor m
+  => language
+  -> GenericLangM language (GenericReportT language (GenericOutput language element) m) a
   -> m (Maybe a, [GenericOutput language element])
-getOutputSequenceAndResult lm = second unbox <$>
-    runLangMReportMultiLang (Paragraph []) gather ($ English) lm
+getOutputSequenceAndResult _ lm = second unbox <$>
+    runLangMReportMultiLang (Paragraph []) gather undefined lm
   where
     gather (Paragraph xs) x = Paragraph (xs ++ [x])
     gather  _ _ = error "this is impossible"

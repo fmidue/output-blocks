@@ -69,6 +69,7 @@ import Control.Monad.State              (State, execState)
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
+import Data.Bifunctor                   (Bifunctor (second))
 import Data.Kind                        (Type)
 import Data.Foldable                    (foldl', sequenceA_, traverse_)
 import Data.Functor.Identity            (Identity (Identity))
@@ -291,16 +292,15 @@ A specific output can be rendered when a language is provided
 to the returned function.
 -}
 runLangMReport
-  :: Monad m
+  :: Functor m
   => o
   -> (o -> o -> o)
   -> GenericLangM l (GenericReportT l o m) a
   -> m (Maybe a, l -> o)
-runLangMReport neutral f lm = do
-  (r, os) <- getOutsWithResult $ unLangM lm
-  let output l = foldl' (toOutput' l) neutral os
-  return (r, output)
+runLangMReport neutral f lm =
+  second foldOutput <$> getOutsWithResult (unLangM lm)
   where
+    foldOutput os l = foldl' (toOutput' l) neutral os
     toOutput' l xs x =
       case x of
         Format o -> f xs o
@@ -315,17 +315,16 @@ The provided output unifies multilingual output as one.
 This could for instance be with local definitions of translated parts.
 -}
 runLangMReportMultiLang
-  :: Monad m
+  :: Functor m
   => o
   -> (o -> o -> o)
   -> ((l -> o) -> o)
   -> GenericLangM l (GenericReportT l o m) a
   -> m (Maybe a, o)
-runLangMReportMultiLang neutral f toO lm = do
-  (r, os) <- getOutsWithResult $ unLangM lm
-  let output = foldl' toOutput' neutral os
-  return (r, output)
+runLangMReportMultiLang neutral f toO lm =
+  second foldOutput <$> getOutsWithResult (unLangM lm)
   where
+    foldOutput = foldl' toOutput' neutral
     toOutput' xs x =
       case x of
         Format o -> f xs o
