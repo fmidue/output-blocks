@@ -53,6 +53,7 @@ module Control.OutputCapable.Blocks (
   ($=<<),
   multipleChoice,
   printSolutionAndAssert,
+  reRefuse,
   singleChoice,
   singleChoiceSyntax,
   continueOrAbort,
@@ -78,12 +79,14 @@ import Control.OutputCapable.Blocks.Generic (
   GenericReportT (..),
   RunnableOutputCapable (..),
   ($=<<),
+  ($>>),
+  ($>>=),
   abortWith,
   format,
+  mapLangM,
   recoverFrom,
   recoverWith,
   runLangMReport,
-  mapLangM,
   )
 import Control.OutputCapable.Blocks.Report (
   GenericOut (..),
@@ -96,6 +99,7 @@ import Control.OutputCapable.Blocks.Report (
   toOutput,
   )
 
+import Control.Applicative              (Alternative)
 import Control.Monad                    (unless, when)
 import Control.Monad.State              (State, modify)
 import Control.Monad.Writer (
@@ -242,6 +246,20 @@ being a member of the map with the same value.
 percentPer :: (Eq a, Ord k) => Map k a -> [(k, a)] -> Rational
 percentPer xs = (% toInteger (length xs)) . sum
   . fmap (\(k, y) -> if M.lookup k xs == Just y then 1 else 0)
+
+{-
+Append some remarks after some rating function.
+But re-reject afterwards (if it was rejected by the rating function).
+-}
+reRefuse
+  :: (Alternative m, Monad m, OutputCapable m)
+  => Rated m
+  -> LangM m
+  -> Rated m
+reRefuse xs ys =
+  recoverWith (pure 0) xs
+    $>>= \x -> ys
+    $>> either (refuse (pure ()) *>) pure x
 
 multiLang :: OutputCapable m => [(Language, String)] -> LangM m
 multiLang xs = translated $ \l ->
