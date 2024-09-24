@@ -287,7 +287,7 @@ data ArticleToUse
 
 {-|
 Outputs the correct solution (if given)
-when achieved points are less then 100 percent.
+when achieved points are less than 100 percent.
 No points are distributed if not at least 50 percent are achieved.
 (see 'printSolutionAndAssertMinimum')
 -}
@@ -305,7 +305,7 @@ printSolutionAndAssert = printSolutionAndAssertMinimum
 
 {-|
 Outputs the correct solution (if given)
-when achieved points are less then 100 percent.
+when achieved points are less than 100 percent.
 No points are distributed if they do not reach the minimum threshold.
 -}
 printSolutionAndAssertMinimum
