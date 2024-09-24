@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -51,9 +52,11 @@ module Control.OutputCapable.Blocks (
   translations,
   -- * Helper functions
   MinimumThreshold (..),
+  Punishment (..),
+  TargetedCorrect (..),
   ($=<<),
+  extendedMultipleChoice,
   multipleChoice,
-  multipleChoiceMinimum,
   printSolutionAndAssert,
   printSolutionAndAssertMinimum,
   reRefuse,
@@ -110,7 +113,7 @@ import Control.Monad.Writer (
   )
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (for_)
-import Data.List                        (sort)
+import Data.List                        (partition, sort)
 import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
 import Data.Ratio                       ((%))
@@ -147,6 +150,14 @@ newtype MinimumThreshold = MinimumThreshold {
   unMinimumThreshold :: Rational
   }
 
+newtype Punishment = Punishment {
+  unPunishment :: Rational
+  }
+
+newtype TargetedCorrect = TargetedCorrect {
+  unTargetedCorrect :: Int
+  }
+
 {-|
 Evaluates multiple choice submissions
 by rejecting correctness below 50 percent.
@@ -165,16 +176,29 @@ multipleChoice
   -> [a]
   -- ^ the submission to evaluate
   -> Rated m
-multipleChoice = multipleChoiceMinimum $ MinimumThreshold (1 % 2)
+multipleChoice articleToUse what solutionString solution =
+  extendedMultipleChoice
+  (MinimumThreshold (1 % 2))
+  (Punishment 0)
+  (TargetedCorrect (length solution))
+  articleToUse
+  what
+  solutionString
+  solution
 
 {-|
 Evaluates multiple choice submissions
 by rejecting correctness below a minimum threshold.
 -}
-multipleChoiceMinimum
+extendedMultipleChoice
   :: (OutputCapable m, Ord a)
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
+  -> Punishment
+  -- ^ points to subtract per wrong answer
+  -> TargetedCorrect
+  -- ^ how many correct answers have to be given within the submission
+  -- in order to achieve full points
   -> ArticleToUse
   -- ^ indicating if multiple different solutions could be possible
   -> Map Language String
@@ -186,8 +210,10 @@ multipleChoiceMinimum
   -> [a]
   -- ^ the submission to evaluate
   -> Rated m
-multipleChoiceMinimum
+extendedMultipleChoice
   minimumPoints
+  punishment
+  targeted
   articleToUse
   what
   optionalSolutionString
@@ -202,19 +228,52 @@ multipleChoiceMinimum
     points
   where
     cs = sort $ nubOrd choices
-    points = percentPer
-      solution
-      (toMapping (M.keys solution) cs)
+    points = gradeMultipleChoice punishment targeted solution cs
     isCorrect = null [c | c <- cs, c `notElem` valid]
     correctnessCheck = yesNo isCorrect $ multiLang [
       (English, "All given " ++ localise English what ++ " are correct?"),
       (German, "Alle angegebenen " ++ localise German what ++ " sind korrekt?")
       ]
-    exhaustivenessCheck =  when isCorrect $ yesNo (cs ==  valid) $ multiLang [
+    exhaustivenessCheck = when isCorrect
+      $ yesNo (length cs >= unTargetedCorrect targeted) $ multiLang [
       (English, "The given " ++ localise English what ++ " are exhaustive?"),
       (German, "Die angegebenen " ++ localise German what ++ " sind vollzählig?")
       ]
     valid = M.keys $ M.filter id solution
+
+{-|
+Calculates points based on the portion of correct choices.
+
+Note that invalid entries within the submission list
+(i.e. which are not covered by the possible answers map)
+are punished like wrong answers.
+
+The following preconditions need to hold before calling this function
+but are not checked:
+
+ * targeted correct is at least one and not larger
+   than the amount of possible answers
+ * the submission list is duplicate free
+-}
+gradeMultipleChoice
+  :: Ord k
+  => Punishment
+  -- ^ how many points to subtract per wrong answer given
+  -> TargetedCorrect
+  -- ^ how many of all possible correct answers are considered exhaustive
+  -> Map k Bool
+  -- ^ possible answers and if they are correct
+  -> [k]
+  -- ^ duplicate free submission
+  -> Rational
+gradeMultipleChoice Punishment {..} TargetedCorrect {..} solution choices =
+  max 0
+    $ min 1 (toInteger (length correct) % toInteger unTargetedCorrect)
+    - toInteger (length incorrect) % 1 * unPunishment
+  where
+    (correct, incorrect) =
+      partition (fromMaybe False . (`M.lookup` solution)) choices
+
 
 {-|
 Use the specified article.
