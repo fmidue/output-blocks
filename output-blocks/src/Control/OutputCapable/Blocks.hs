@@ -50,9 +50,12 @@ module Control.OutputCapable.Blocks (
   translateCode,
   translations,
   -- * Helper functions
+  MinimumThreshold (..),
   ($=<<),
   multipleChoice,
+  multipleChoiceMinimum,
   printSolutionAndAssert,
+  printSolutionAndAssertMinimum,
   reRefuse,
   singleChoice,
   singleChoiceSyntax,
@@ -140,18 +143,63 @@ yesNo p q = do
         german "Nein."
   pure ()
 
+newtype MinimumThreshold = MinimumThreshold {
+  unMinimumThreshold :: Rational
+  }
+
+{-|
+Evaluates multiple choice submissions
+by rejecting correctness below 50 percent.
+(see 'multipleChoiceMinimum')
+-}
 multipleChoice
   :: (OutputCapable m, Ord a)
   => ArticleToUse
+  -- ^ indicating if multiple different solutions could be possible
   -> Map Language String
+  -- ^ what is asked for
   -> Maybe String
+  -- ^ the correct solution to show
   -> Map a Bool
+  -- ^ possible answers and if they are correct
   -> [a]
+  -- ^ the submission to evaluate
   -> Rated m
-multipleChoice articleToUse what optionalSolutionString solution choices =
-  correctnessCheck
+multipleChoice = multipleChoiceMinimum $ MinimumThreshold (1 % 2)
+
+{-|
+Evaluates multiple choice submissions
+by rejecting correctness below a minimum threshold.
+-}
+multipleChoiceMinimum
+  :: (OutputCapable m, Ord a)
+  => MinimumThreshold
+  -- ^ the minimum threshold of achieved points
+  -> ArticleToUse
+  -- ^ indicating if multiple different solutions could be possible
+  -> Map Language String
+  -- ^ what is asked for
+  -> Maybe String
+  -- ^ the correct solution to show
+  -> Map a Bool
+  -- ^ possible answers and if they are correct
+  -> [a]
+  -- ^ the submission to evaluate
+  -> Rated m
+multipleChoiceMinimum
+  minimumPoints
+  articleToUse
+  what
+  optionalSolutionString
+  solution
+  choices
+  = correctnessCheck
   *> exhaustivenessCheck
-  *> printSolutionAndAssert articleToUse optionalSolutionString points
+  *> printSolutionAndAssertMinimum
+    minimumPoints
+    articleToUse
+    optionalSolutionString
+    points
   where
     cs = sort $ nubOrd choices
     points = percentPer
@@ -178,13 +226,46 @@ data ArticleToUse
   -- ^ use indefinite article(s)
   deriving (Eq, Generic, Read, Show)
 
+{-|
+Outputs the correct solution (if given)
+when achieved points are less then 100 percent.
+No points are distributed if not at least 50 percent are achieved.
+(see 'printSolutionAndAssertMinimum')
+-}
 printSolutionAndAssert
   :: OutputCapable m
   => ArticleToUse
+  -- ^ indicating if multiple different solutions could be possible
   -> Maybe String
+  -- ^ the correct solution to show
   -> Rational
+  -- ^ points achieved
   -> Rated m
-printSolutionAndAssert articleToUse optionalSolutionString points = do
+printSolutionAndAssert = printSolutionAndAssertMinimum
+  $ MinimumThreshold (1 % 2)
+
+{-|
+Outputs the correct solution (if given)
+when achieved points are less then 100 percent.
+No points are distributed if they do not reach the minimum threshold.
+-}
+printSolutionAndAssertMinimum
+  :: OutputCapable m
+  => MinimumThreshold
+  -- ^ the minimum threshold of achieved points
+  -> ArticleToUse
+  -- ^ indicating if multiple different solutions could be possible
+  -> Maybe String
+  -- ^ the correct solution to show
+  -> Rational
+  -- ^ points achieved
+  -> Rated m
+printSolutionAndAssertMinimum
+  minimumPoints
+  articleToUse
+  optionalSolutionString
+  points
+  = do
   for_ optionalSolutionString (\solutionString ->
     when (points /= 1) $ paragraph $ do
       translate $ case articleToUse of
@@ -197,7 +278,7 @@ printSolutionAndAssert articleToUse optionalSolutionString points = do
       code solutionString
       pure ()
     )
-  unless (points >= 1 % 2) $ refuse $ pure ()
+  unless (points >= unMinimumThreshold minimumPoints) $ refuse $ pure ()
   return points
 
 singleChoiceSyntax
