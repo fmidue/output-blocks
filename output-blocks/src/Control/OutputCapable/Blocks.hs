@@ -57,6 +57,7 @@ module Control.OutputCapable.Blocks (
   ($=<<),
   extendedMultipleChoice,
   multipleChoice,
+  multipleChoiceSyntax,
   printSolutionAndAssert,
   printSolutionAndAssertMinimum,
   reRefuse,
@@ -112,7 +113,7 @@ import Control.Monad.Writer (
   MonadWriter (tell),
   )
 import Data.Containers.ListUtils        (nubOrd)
-import Data.Foldable                    (for_)
+import Data.Foldable                    (for_, traverse_)
 import Data.List                        (partition, sort)
 import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
@@ -157,6 +158,22 @@ newtype Punishment = Punishment {
 newtype TargetedCorrect = TargetedCorrect {
   unTargetedCorrect :: Int
   }
+
+{-|
+Outputs feedback on syntax of a multiple choice submission.
+Depending on chosen parameters it might reject the submission.
+-}
+multipleChoiceSyntax
+  :: (OutputCapable m, Ord a, Show a)
+  => Bool
+  -- ^ whether to continue after check (i.e. do not reject wrong answers)
+  -> [a]
+  -- ^ possible answers
+  -> [a]
+  -- ^ the submission to evaluate
+  -> LangM m
+multipleChoiceSyntax withSolution options =
+  traverse_ (singleChoiceSyntax withSolution options) . nubOrd
 
 {-|
 Evaluates multiple choice submissions
