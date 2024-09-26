@@ -147,14 +147,23 @@ yesNo p q = do
         german "Nein."
   pure ()
 
+{-|
+A 'Rational' number indicating the minimal threshold.
+-}
 newtype MinimumThreshold = MinimumThreshold {
   unMinimumThreshold :: Rational
   }
 
+{-|
+A 'Rational' number indicating the punishment.
+-}
 newtype Punishment = Punishment {
   unPunishment :: Rational
   }
 
+{-|
+A 'Int' number indicating expected correct answers.
+-}
 newtype TargetedCorrect = TargetedCorrect {
   unTargetedCorrect :: Int
   }
@@ -178,7 +187,7 @@ multipleChoiceSyntax withSolution options =
 {-|
 Evaluates multiple choice submissions
 by rejecting correctness below 50 percent.
-(see 'multipleChoiceMinimum')
+(see 'extendedMultipleChoice')
 -}
 multipleChoice
   :: (OutputCapable m, Ord a)
@@ -357,11 +366,18 @@ printSolutionAndAssertMinimum
   unless (points >= unMinimumThreshold minimumPoints) $ refuse $ pure ()
   return points
 
+{-|
+Outputs feedback on syntax of a single choice submission.
+Depending on chosen parameters it might reject the submission.
+-}
 singleChoiceSyntax
   :: (OutputCapable m, Eq a, Show a)
   => Bool
+  -- ^ whether to continue after check (i.e. do not reject wrong answers)
   -> [a]
+  -- ^ possible answers
   -> a
+  -- ^ the submission to evaluate
   -> LangM m
 singleChoiceSyntax withSolution options choice =
   let assert = continueOrAbort withSolution
@@ -370,13 +386,21 @@ singleChoiceSyntax withSolution options choice =
     english $ "Chosen option " ++ c  ++ " is available?"
     german $ "Gewählte Option " ++ c ++ " ist verfügbar?"
 
+{-|
+Outputs feedback and rates a singleChoice submisson.
+-}
 singleChoice
   :: (OutputCapable m, Eq a)
   => ArticleToUse
+  -- ^ indicating if multiple different solutions could be possible
   -> Map Language String
+  -- ^ what is asked for
   -> Maybe String
+  -- ^ the correct solution to show
   -> a
+  -- ^ the correct answer
   -> a
+  -- ^ the submission to evaluate
   -> Rated m
 singleChoice articleToUse what optionalSolutionString solution choice = do
   checkCorrect
@@ -389,7 +413,7 @@ singleChoice articleToUse what optionalSolutionString solution choice = do
       (English, "Chosen " ++ localise English what ++ " is correct?"),
       (German, "Der/die/das gewählte " ++ localise German what ++ " ist korrekt?")]
 
-{-
+{-|
 Append some remarks after some rating function.
 But re-reject afterwards (if it was rejected by the rating function).
 -}
@@ -444,9 +468,17 @@ You should always prefer this specified version over the generic.
 translations :: State (Map l a) () -> Map l a
 translations = Generic.translations
 
+{-|
+Provide an English translation
+to be appended after previous English translations.
+-}
 english :: String -> State (Map Language String) ()
 english = modify . M.insertWith (flip (++)) English
 
+{-|
+Provide an German translation
+to be appended after previous German translations.
+-}
 german :: String -> State (Map Language String) ()
 german = modify . M.insertWith (flip (++)) German
 
