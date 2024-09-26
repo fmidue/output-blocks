@@ -387,7 +387,7 @@ singleChoiceSyntax withSolution options choice =
     german $ "Gewählte Option " ++ c ++ " ist verfügbar?"
 
 {-|
-Outputs feedback and rates a singleChoice submisson.
+Outputs feedback and rates a single choice submission.
 -}
 singleChoice
   :: (OutputCapable m, Eq a)
