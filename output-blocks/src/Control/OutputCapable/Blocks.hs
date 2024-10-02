@@ -114,7 +114,6 @@ import Control.Monad.Writer (
   )
 import Data.Containers.ListUtils        (nubOrd)
 import Data.Foldable                    (for_, traverse_)
-import Data.List                        (partition, sort)
 import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
 import Data.Ratio                       ((%))
@@ -211,10 +210,18 @@ multipleChoice articleToUse what solutionString solution =
   what
   solutionString
   solution
+  . foldr (`M.insert` True) (M.filter not solution)
 
 {-|
 Evaluates multiple choice submissions
 by rejecting correctness below a minimum threshold.
+
+
+The following preconditions need to hold before calling this function
+but are not checked:
+
+ * targeted correct is at least one
+   and not larger than the amount of possible answers
 -}
 extendedMultipleChoice
   :: (OutputCapable m, Ord a)
@@ -233,7 +240,7 @@ extendedMultipleChoice
   -- ^ the correct solution to show
   -> Map a Bool
   -- ^ possible answers and if they are correct
-  -> [a]
+  -> Map a Bool
   -- ^ the submission to evaluate
   -> Rated m
 extendedMultipleChoice
@@ -253,19 +260,21 @@ extendedMultipleChoice
     optionalSolutionString
     points
   where
-    cs = sort $ nubOrd choices
-    points = gradeMultipleChoice punishment targeted solution cs
-    isCorrect = null [c | c <- cs, c `notElem` valid]
+    madeUp = M.difference choices solution
+    chosenTrue = M.intersection solution $ M.filter id choices
+    isCorrect = M.null madeUp && and chosenTrue
+    points = gradeMultipleChoice punishment targeted solution choices
     correctnessCheck = yesNo isCorrect $ multiLang [
       (English, "All given " ++ localise English what ++ " are correct?"),
       (German, "Alle angegebenen " ++ localise German what ++ " sind korrekt?")
       ]
+    answers = M.intersectionWith (==) solution choices
+    isComplete = and answers && length answers >= unTargetedCorrect targeted
     exhaustivenessCheck = when isCorrect
-      $ yesNo (length cs >= unTargetedCorrect targeted) $ multiLang [
+      $ yesNo isComplete $ multiLang [
       (English, "The given " ++ localise English what ++ " are exhaustive?"),
       (German, "Die angegebenen " ++ localise German what ++ " sind vollzählig?")
       ]
-    valid = M.keys $ M.filter id solution
 
 {-|
 Calculates points based on the portion of correct choices.
@@ -277,9 +286,8 @@ are punished like wrong answers.
 The following preconditions need to hold before calling this function
 but are not checked:
 
- * targeted correct is at least one and not larger
-   than the amount of possible answers
- * the submission list is duplicate free
+ * targeted correct is at least one
+   and not larger than the amount of possible answers
 -}
 gradeMultipleChoice
   :: Ord k
@@ -289,8 +297,8 @@ gradeMultipleChoice
   -- ^ how many of all possible correct answers are considered exhaustive
   -> Map k Bool
   -- ^ possible answers and if they are correct
-  -> [k]
-  -- ^ duplicate free submission
+  -> Map k Bool
+  -- ^ submission
   -> Rational
 gradeMultipleChoice Punishment {..} TargetedCorrect {..} solution choices =
   max 0
@@ -298,7 +306,7 @@ gradeMultipleChoice Punishment {..} TargetedCorrect {..} solution choices =
     - toInteger (length incorrect) % 1 * unPunishment
   where
     (correct, incorrect) =
-      partition (fromMaybe False . (`M.lookup` solution)) choices
+      M.partitionWithKey (\k -> (== M.lookup k solution) . Just) choices
 
 
 {-|
