@@ -1,11 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Control.OutputCapable.Blocks.Generic.Type
     ( GenericOutput (..)
+    , foldrOutput
     , getOutputSequence
     , getOutputSequenceWithRating
+    , inspectTranslations
     , toOutputCapable
+    , withRefusal
     ) where
 
 import Control.OutputCapable.Blocks.Generic (
@@ -168,6 +172,76 @@ getOutputSequenceAndResult language lm = second unbox <$>
     unbox  _ = error "this is impossible"
 
 
+{-|
+A right fold with the possibility to inspect every node.
+-}
+foldrOutput
+  :: (a -> a -> a)
+  -> (GenericOutput language element -> a)
+  -> GenericOutput language element
+  -> a
+foldrOutput f evaluate x = case x of
+  Assertion _ xs    -> foldr (f . descend) (evaluate x) xs
+  Image {}          -> evaluate x
+  Images {}         -> evaluate x
+  Paragraph xs      -> foldr (f . descend) (evaluate x) xs
+  Refuse xs         -> foldr (f . descend) (evaluate x) xs
+  Enumerated xs   ->
+    foldr
+    (\next done -> uncurry f $ both (foldr (f . descend) done) next)
+    (evaluate x)
+    xs
+  Itemized xs       -> foldr (flip (foldr (f . descend))) (evaluate x) xs
+  Indented xs       -> foldr (f . descend) (evaluate x) xs
+  Latex {}          -> evaluate x
+  Code {}           -> evaluate x
+  Translated {}     -> evaluate x
+  Special {}        -> evaluate x
+  where
+    descend = foldrOutput f evaluate
+
+{-|
+Checks whether any refusal exists within the given 'GenericOutput'.
+-}
+withRefusal :: (element -> Bool) -> GenericOutput language element -> Bool
+withRefusal checkSpecial = foldrOutput (||) $ \case
+  Assertion False _ -> True
+  Assertion True _  -> False
+  Image {}          -> False
+  Images {}         -> False
+  Paragraph {}      -> False
+  Refuse {}         -> True
+  Enumerated {}     -> False
+  Itemized {}       -> False
+  Indented {}       -> False
+  Latex {}          -> False
+  Code {}           -> False
+  Translated {}     -> False
+  Special element   -> checkSpecial element
+
+{-|
+Inspects translations provided the given inspect and combining functions.
+-}
+inspectTranslations
+  :: (element -> a)
+  -> (Map language String -> a)
+  -> (a -> a -> a)
+  -> a
+  -> GenericOutput language element
+  -> a
+inspectTranslations inspectSpecial inspectTranslation f z = foldrOutput f $ \case
+  Assertion {}      -> z
+  Image {}          -> z
+  Images {}         -> z
+  Paragraph {}      -> z
+  Refuse {}         -> z
+  Enumerated {}     -> z
+  Itemized {}       -> z
+  Indented {}       -> z
+  Latex {}          -> z
+  Code ts           -> inspectTranslation ts
+  Translated ts     -> inspectTranslation ts
+  Special element   -> inspectSpecial element
 
 toMap :: (Bounded l, Enum l, Ord l) => (l -> o) -> Map l o
 toMap f = Map.fromList $ map (second f . dupe) [minBound .. maxBound]

@@ -30,16 +30,24 @@ module Control.OutputCapable.Blocks.Type (
   toOutputCapable,
   -- ** for 'SpecialOutput'
   type SpecialOutput,
+  checkTranslations,
+  foldrOutput,
   getSpecialOutputSequence,
   getSpecialOutputSequenceWithRating,
   specialToOutputCapable,
+  withRefusal,
   ) where
 
 import qualified Control.OutputCapable.Blocks.Generic.Type as Generic (
+  foldrOutput,
   getOutputSequence,
   getOutputSequenceWithRating,
+  inspectTranslations,
   toOutputCapable,
+  withRefusal,
   )
+
+import qualified Data.Map                         as M (keys)
 
 import Control.OutputCapable.Blocks.Generic.Type (GenericOutput (..))
 import Control.OutputCapable.Blocks (
@@ -49,6 +57,10 @@ import Control.OutputCapable.Blocks (
   Rated,
   ReportT,
   )
+
+import Data.List                        ((\\))
+import Data.Map                         (Map)
+import Data.Traversable                 (for)
 
 type SpecialOutput = GenericOutput Language
 type Output = SpecialOutput ()
@@ -83,3 +95,37 @@ specialToOutputCapable
   -> [SpecialOutput element]
   -> LangM m
 specialToOutputCapable = Generic.toOutputCapable
+
+{-|
+A right fold with the possibility to inspect every node.
+-}
+foldrOutput
+  :: (a -> a -> a)
+  -> (SpecialOutput element -> a)
+  -> SpecialOutput element
+  -> a
+foldrOutput = Generic.foldrOutput
+
+{-|
+Checks whether any refusal exists within the given 'GenericOutput'.
+-}
+withRefusal :: (element -> Bool) -> SpecialOutput element -> Bool
+withRefusal = Generic.withRefusal
+
+{-|
+Checks a 'Map' for missing translations and reports those as list.
+-}
+checkTranslation :: Map Language String -> [String]
+checkTranslation xs =
+  let ls = [minBound ..] \\ M.keys xs
+  in for ls $ \l -> "Missing " ++ show l ++ " translation for " ++ show xs ++ "."
+
+{-|
+Checks 'SpecialOutput' for missing translations.
+-}
+checkTranslations
+  :: (element -> [String])
+  -> SpecialOutput element
+  -> [String]
+checkTranslations inspectSpecial =
+  Generic.inspectTranslations inspectSpecial checkTranslation (++) []
