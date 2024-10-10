@@ -4,7 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Provides an Algebraic Data Type to represent 'GenericOutput'.
-This can be useful in cases where the raw representation needs to be persited
+This can be useful in cases where the raw representation needs to be persisted
 or for converting the type of 'GenericOutputCapable'.
 -}
 module Control.OutputCapable.Blocks.Generic.Type
