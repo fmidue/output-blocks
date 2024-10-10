@@ -38,8 +38,9 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - uses: actions/cache@v4
-        name: Cache ~/.stack
+      - name: Restore ~/.stack cache
+        id: restore-stack
+        uses: actions/cache/restore@v4
         with:
           path: ~/.stack
           key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
@@ -47,11 +48,11 @@ jobs:
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
             ${{ runner.os }}-stack-global-
-          save-always: true
         if: contains(matrix.os, 'windows') == false
 
-      - uses: actions/cache@v4
-        name: Cache %APPDATA%\stack %LOCALAPPDATA%\Programs\stack
+      - name: Restore %APPDATA%\stack %LOCALAPPDATA%\Programs\stack cache
+        id: restore-stack-windows
+        uses: actions/cache/restore@v4
         with:
           path: |
               ~\AppData\Roaming\stack
@@ -61,11 +62,11 @@ jobs:
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
             ${{ runner.os }}-stack-global-
-          save-always: true
         if: contains(matrix.os, 'windows')
 
-      - uses: actions/cache@v4
-        name: Cache .stack-work
+      - name: Restore .stack-work cache
+        id: restore-stack-work
+        uses: actions/cache/restore@v4
         with:
           path: .stack-work
           key: ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
@@ -115,3 +116,25 @@ jobs:
         env:
           ARGS: "--resolver=${{ matrix.plan.resolver }}"
         if: contains(matrix.os, 'windows')
+
+      - name: Cache ~/.stack
+        uses: actions/cache/save@v4
+        if: contains(matrix.os, 'windows') == false && always() && steps.restore-stack.outputs.cache-hit != 'true' && steps.restore-stack-work.outputs.cache-hit != 'true'
+        with:
+          path: ~/.stack
+          key: ${{ steps.restore-stack.outputs.cache-primary-key }}
+
+      - name: Cache %APPDATA%\stack %LOCALAPPDATA%\Programs\stack
+        uses: actions/cache/save@v4
+        if: contains(matrix.os, 'windows') && always() && steps.restore-stack-windows.outputs.cache-hit != 'true' && steps.restore-stack-work.outputs.cache-hit != 'true'
+        with:
+          path: |
+              ~\AppData\Roaming\stack
+              ~\AppData\Local\Programs\stack
+          key: ${{ steps.restore-stack-windows.outputs.cache-primary-key }}
+
+      - name: Cache .stack-work
+        uses: actions/cache/save@v4
+        with:
+          path: .stack-work
+          key: ${{ steps.restore-stack-work.outputs.cache-primary-key }}
