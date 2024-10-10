@@ -9,7 +9,7 @@ or for converting the type of 'GenericOutputCapable'.
 -}
 module Control.OutputCapable.Blocks.Generic.Type
     ( GenericOutput (..)
-    , foldrOutput
+    , foldMapOutputBy
     , getOutputSequence
     , getOutputSequenceAndResult
     , getOutputSequenceWithRating
@@ -195,13 +195,15 @@ getOutputSequenceAndResult language lm = second unbox <$>
 
 {-|
 A right fold with the possibility to inspect every node.
+
+@since: 0.4
 -}
-foldrOutput
+foldMapOutputBy
   :: (a -> a -> a)
   -> (GenericOutput language element -> a)
   -> GenericOutput language element
   -> a
-foldrOutput f evaluate x = case x of
+foldMapOutputBy f evaluate x = case x of
   Assertion _ xs    -> foldr (f . descend) (evaluate x) xs
   Image {}          -> evaluate x
   Images {}         -> evaluate x
@@ -219,13 +221,15 @@ foldrOutput f evaluate x = case x of
   Translated {}     -> evaluate x
   Special {}        -> evaluate x
   where
-    descend = foldrOutput f evaluate
+    descend = foldMapOutputBy f evaluate
 
 {-|
 Checks whether any refusal exists within the given 'GenericOutput'.
+
+@since: 0.3.0.1
 -}
 withRefusal :: (element -> Bool) -> GenericOutput language element -> Bool
-withRefusal checkSpecial = foldrOutput (||) $ \case
+withRefusal checkSpecial = foldMapOutputBy (||) $ \case
   Assertion False _ -> True
   Assertion True _  -> False
   Image {}          -> False
@@ -242,6 +246,8 @@ withRefusal checkSpecial = foldrOutput (||) $ \case
 
 {-|
 Inspects translations provided the given inspect and combining functions.
+
+@since: 0.3.0.1
 -}
 inspectTranslations
   :: (element -> a)
@@ -250,7 +256,7 @@ inspectTranslations
   -> a
   -> GenericOutput language element
   -> a
-inspectTranslations inspectSpecial inspectTranslation f z = foldrOutput f $ \case
+inspectTranslations inspectSpecial inspectTranslation f z = foldMapOutputBy f $ \case
   Assertion {}      -> z
   Image {}          -> z
   Images {}         -> z

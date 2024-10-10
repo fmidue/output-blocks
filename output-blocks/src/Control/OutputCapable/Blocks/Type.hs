@@ -31,7 +31,7 @@ module Control.OutputCapable.Blocks.Type (
   -- ** for 'SpecialOutput'
   type SpecialOutput,
   checkTranslations,
-  foldrOutput,
+  foldMapOutputBy,
   getSpecialOutputSequence,
   getSpecialOutputSequenceWithRating,
   specialToOutputCapable,
@@ -41,7 +41,7 @@ module Control.OutputCapable.Blocks.Type (
   ) where
 
 import qualified Control.OutputCapable.Blocks.Generic.Type as Generic (
-  foldrOutput,
+  foldMapOutputBy,
   getOutputSequence,
   getOutputSequenceWithRating,
   inspectTranslations,
@@ -125,22 +125,28 @@ specialToOutputCapable = Generic.toOutputCapable
 
 {-|
 A right fold with the possibility to inspect every node.
+
+@since: 0.4
 -}
-foldrOutput
+foldMapOutputBy
   :: (a -> a -> a)
   -> (SpecialOutput element -> a)
   -> SpecialOutput element
   -> a
-foldrOutput = Generic.foldrOutput
+foldMapOutputBy = Generic.foldMapOutputBy
 
 {-|
 Checks whether any refusal exists within the given 'GenericOutput'.
+
+@since: 0.3.0.1
 -}
 withRefusal :: (element -> Bool) -> SpecialOutput element -> Bool
 withRefusal = Generic.withRefusal
 
 {-|
 Checks a 'Map' for missing translations and reports those as list.
+
+@since: 0.3.0.2
 -}
 checkTranslation :: Map Language String -> [String]
 checkTranslation xs =
@@ -149,6 +155,8 @@ checkTranslation xs =
 
 {-|
 Checks 'SpecialOutput' for missing translations.
+
+@since: 0.3.0.1
 -}
 checkTranslations
   :: (element -> [String])
