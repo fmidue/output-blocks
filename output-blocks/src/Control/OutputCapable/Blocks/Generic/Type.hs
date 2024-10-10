@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
@@ -71,7 +73,7 @@ data GenericOutput language element
     -- ^ allows abbreviating several complex parts
     --   which have special rendering functions
     --   which are not easily representable as ADT
-    deriving (Eq, Generic, Read, Show)
+    deriving (Eq, Functor, Foldable, Generic, Read, Show)
 
 {-|
 OutputCapable instances for 'GenericOutput',
