@@ -36,6 +36,8 @@ module Control.OutputCapable.Blocks.Type (
   getSpecialOutputSequenceWithRating,
   specialToOutputCapable,
   withRefusal,
+  -- ** other
+  checkTranslation,
   ) where
 
 import qualified Control.OutputCapable.Blocks.Generic.Type as Generic (
@@ -62,33 +64,58 @@ import Data.List                        ((\\))
 import Data.Map                         (Map)
 import Data.Traversable                 (for)
 
+-- | 'GenericOutput' but with translations fixed to 'Language'
 type SpecialOutput = GenericOutput Language
+
+-- | 'SpecialOutput' without 'Special' elements
 type Output = SpecialOutput ()
 
+{-|
+Converts non graded 'OutputCapable' value using 'GenericOutput'
+into a list of 'Output'
+-}
 getOutputSequence :: Functor m => LangM (ReportT Output m) -> m [Output]
 getOutputSequence = Generic.getOutputSequence English
 
+{-|
+Converts graded 'OutputCapable' value using 'GenericOutput'
+into a rating and a list of 'Output'
+-}
 getOutputSequenceWithRating
   :: Functor m
   => Rated (ReportT Output m)
   -> m (Maybe Rational, [Output])
 getOutputSequenceWithRating = Generic.getOutputSequenceWithRating English
 
+{- |
+Convert a list of 'Output' into any instance of 'OutputCapable'
+-}
 toOutputCapable :: OutputCapable m => [Output] -> LangM m
 toOutputCapable = Generic.toOutputCapable pure
 
+{-|
+Converts non graded 'OutputCapable' value using 'GenericOutput'
+into a list of 'SpecialOutput'
+-}
 getSpecialOutputSequence
   :: Functor m
   => LangM (ReportT (SpecialOutput element) m)
   -> m [SpecialOutput element]
 getSpecialOutputSequence = Generic.getOutputSequence English
 
+{-|
+Converts graded 'OutputCapable' value using 'GenericOutput'
+into a rating and a list of 'SpecialOutput'
+-}
 getSpecialOutputSequenceWithRating
   :: Functor m
   => Rated (ReportT (SpecialOutput element) m)
   -> m (Maybe Rational, [SpecialOutput element])
 getSpecialOutputSequenceWithRating = Generic.getOutputSequenceWithRating English
 
+{- |
+Convert a list of 'SpecialOutput' into any instance of 'OutputCapable'
+-}
 specialToOutputCapable
   :: OutputCapable m
   => (element -> LangM m)

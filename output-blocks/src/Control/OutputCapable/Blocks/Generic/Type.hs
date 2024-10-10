@@ -2,10 +2,16 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Provides an Algebraic Data Type to represent 'GenericOutput'.
+This can be useful in cases where the raw representation needs to be persited
+or for converting the type of 'GenericOutputCapable'.
+-}
 module Control.OutputCapable.Blocks.Generic.Type
     ( GenericOutput (..)
     , foldrOutput
     , getOutputSequence
+    , getOutputSequenceAndResult
     , getOutputSequenceWithRating
     , inspectTranslations
     , toOutputCapable
@@ -40,16 +46,27 @@ The result can be converted into any member of the class.
 -}
 data GenericOutput language element
     = Assertion Bool [GenericOutput language element]
+    -- ^ abortion is expected at 'False'
     | Image FilePath
+    -- ^ a single image
     | Images (Map String FilePath)
+    -- ^ multiple images with a text tag that is to be printed (e.g. a number)
     | Paragraph [GenericOutput language element]
+    -- ^ to group (and separate) output
     | Refuse [GenericOutput language element]
+    -- ^ abort with output
     | Enumerated [([GenericOutput language element], [GenericOutput language element])]
+    -- ^ an enumeration with the enumerator first and content second
     | Itemized [[GenericOutput language element]]
+    -- ^ like enumeration (but without enumerator)
     | Indented [GenericOutput language element]
+    -- ^ for indenting output
     | Latex String
+    -- ^ latex code (for formulas and text blocks only)
     | Code (Map language String)
+    -- ^ to output as text with fixed width, providing translations
     | Translated (Map language String)
+    -- ^ normal text with translations
     | Special element
     -- ^ allows abbreviating several complex parts
     --   which have special rendering functions
@@ -156,6 +173,10 @@ getOutputSequenceWithRating = getOutputSequenceAndResult
 {-|
 Converts 'GenericOutputCapable' value using 'GenericOutput'
 into a result and a list of 'GenericOutput'
+
+Consider using 'getOutputSequenceWithRating'
+or even more specific versions of 'Control.OutputCapable.Blocks.Type'
+in order to get better error messages on implementation errors.
 -}
 getOutputSequenceAndResult
   :: Functor m
