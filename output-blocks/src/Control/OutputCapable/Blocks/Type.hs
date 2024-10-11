@@ -62,7 +62,6 @@ import Control.OutputCapable.Blocks (
 
 import Data.List                        ((\\))
 import Data.Map                         (Map)
-import Data.Traversable                 (for)
 
 -- | 'GenericOutput' but with translations fixed to 'Language'
 type SpecialOutput = GenericOutput Language
@@ -151,7 +150,8 @@ Checks a 'Map' for missing translations and reports those as list.
 checkTranslation :: Map Language String -> [String]
 checkTranslation xs =
   let ls = [minBound ..] \\ M.keys xs
-  in for ls $ \l -> "Missing " ++ show l ++ " translation for " ++ show xs ++ "."
+  in flip map ls
+  $ \l -> "Missing " ++ show l ++ " translation for " ++ show xs ++ "."
 
 {-|
 Checks 'SpecialOutput' for missing translations.
