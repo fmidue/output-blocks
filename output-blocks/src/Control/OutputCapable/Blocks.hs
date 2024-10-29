@@ -107,7 +107,7 @@ import Control.OutputCapable.Blocks.Report (
   )
 
 import Control.Applicative              (Alternative)
-import Control.Monad                    (unless, when)
+import Control.Monad                    (unless, void, when)
 import Control.Monad.State              (State, modify)
 import Control.Monad.Writer (
   MonadWriter (tell),
@@ -409,8 +409,8 @@ singleChoice
   -- ^ the correct answer
   -> a
   -- ^ the submission to evaluate
-  -> Rated m
-singleChoice articleToUse what optionalSolutionString solution choice = do
+  -> LangM m
+singleChoice articleToUse what optionalSolutionString solution choice = void $
   checkCorrect
   *> printSolutionAndAssert articleToUse optionalSolutionString points
   where
