@@ -364,10 +364,10 @@ printSolutionAndAssertMinimum
       translate $ case articleToUse of
         DefiniteArticle -> do
           english "The correct solution is:"
-          german "Die richtige Lösung ist:"
+          german "Die korrekte Lösung ist:"
         IndefiniteArticle -> do
           english "A correct solution is:"
-          german "Eine richtige Lösung ist:"
+          german "Eine korrekte Lösung ist:"
       code solutionString
       pure ()
     )
