@@ -20,7 +20,8 @@ jobs:
           - {resolver: lts-20.26}
           - {resolver: lts-21.25}
           - {resolver: lts-22.18}
-          - {resolver: nightly}
+          - {resolver: lts-23.5}
+          - {resolver: nightly, stack-yaml: '--stack-yaml=nightly-stack.yaml'}
         exclude:
           - os: macOS-latest
             plan: {resolver: lts-18.28}
@@ -43,8 +44,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.stack
-          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('nightly-stack.yaml') }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('nightly-stack.yaml') }}
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
             ${{ runner.os }}-stack-global-
@@ -57,8 +59,9 @@ jobs:
           path: |
               ~\AppData\Roaming\stack
               ~\AppData\Local\Programs\stack
-          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+          key: ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('nightly-stack.yaml') }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
+            ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('nightly-stack.yaml') }}
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-stack-global-${{ matrix.plan.resolver }}
             ${{ runner.os }}-stack-global-
@@ -69,8 +72,10 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .stack-work
-          key: ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+          key:
+            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('nightly-stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
+            ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('nightly-stack.yaml') }}
             ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}-${{ hashFiles('stack.yaml') }}
             ${{ runner.os }}-stack-work-${{ matrix.plan.resolver }}
             ${{ runner.os }}-stack-work-
@@ -85,36 +90,40 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc $ARGS test --bench --only-dependencies
+          stack --no-terminal --install-ghc $RES $YML test --bench --only-dependencies
           set +ex
         env:
-          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+          RES: "--resolver=${{ matrix.plan.resolver }}"
+          YML: "${{ matrix.plan.stack-yaml }}"
         if: contains(matrix.os, 'windows') == false
 
       - name: Install dependencies on windows
         shell: powershell
         run: |
-          stack --no-terminal -j 1 --install-ghc ${env:ARGS} test --bench --only-dependencies
+          stack --no-terminal -j 1 --install-ghc ${env:RES} ${env:YML} test --bench --only-dependencies
         env:
-          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+          RES: "--resolver=${{ matrix.plan.resolver }}"
+          YML: "${{ matrix.plan.stack-yaml }}"
         if: contains(matrix.os, 'windows')
 
       - name: Build on unix
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc test $ARGS --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
+          stack --no-terminal --install-ghc test $RES $YML --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
-          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+          RES: "--resolver=${{ matrix.plan.resolver }}"
+          YML: "${{ matrix.plan.stack-yaml }}"
         if: contains(matrix.os, 'windows') == false
 
       - name: Build on windows
         shell: powershell
         run: |
-          stack --no-terminal --install-ghc test ${env:ARGS} --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
+          stack --no-terminal --install-ghc test ${env:RES} ${env:YML} --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
         env:
-          ARGS: "--resolver=${{ matrix.plan.resolver }}"
+          RES: "--resolver=${{ matrix.plan.resolver }}"
+          YML: "${{ matrix.plan.stack-yaml }}"
         if: contains(matrix.os, 'windows')
 
       - name: Cache ~/.stack
