@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -33,7 +34,12 @@ import Control.OutputCapable.Blocks.Generic (
 
 import Control.Monad.Writer (MonadWriter (tell))
 import Data.Bifunctor (first)
-import Data.Foldable                    (Foldable (foldl'), sequenceA_)
+import Data.Foldable (
+#if !MIN_VERSION_base(4,20,0)
+  Foldable (foldl'),
+#endif
+  sequenceA_,
+  )
 import Data.Text (pack)
 import Text.LaTeX.Base.Syntax (
   LaTeX (TeXComm, TeXEnv, TeXRaw),

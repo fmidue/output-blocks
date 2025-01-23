@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -71,7 +72,13 @@ import Control.Monad.Writer (
   )
 import Data.Bifunctor                   (Bifunctor (second))
 import Data.Kind                        (Type)
-import Data.Foldable                    (foldl', sequenceA_, traverse_)
+import Data.Foldable (
+#if !MIN_VERSION_base(4,20,0)
+  foldl',
+#endif
+  sequenceA_,
+  traverse_,
+  )
 import Data.Functor.Identity            (Identity (Identity))
 import Data.Map                         (Map)
 import Data.Maybe                       (fromMaybe)
