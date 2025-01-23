@@ -1,0 +1,9 @@
+---
+resolver: latest
+packages:
+  - output-blocks
+  - output-blocks-latex
+extra-deps:
+  # temporary replacement of HaTeX until build is fixed for GHC > 9.10.1
+  - git: https://gitlab.com/patritzenfeld/HaTeX.git
+    commit: 1dc649f6030bea2e4259eb5810bf74858efac01a
