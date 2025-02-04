@@ -87,7 +87,7 @@ getOutputSequenceWithRating
   :: Functor m
   => Rated (ReportT Output m)
   -> m (Maybe Rational, [Output])
-getOutputSequenceWithRating = Generic.getOutputSequenceWithRating English
+getOutputSequenceWithRating = getOutputSequenceAndResult
 
 {-|
 Converts 'OutputCapable' value using 'GenericOutput'
@@ -100,7 +100,7 @@ getOutputSequenceAndResult
   :: Functor m
   => LangM' (ReportT Output m) a
   -> m (Maybe a, [Output])
-getOutputSequenceAndResult = getOutputSequenceWithRating
+getOutputSequenceAndResult = Generic.getOutputSequenceAndResult English
 
 {- |
 Convert a list of 'Output' into any instance of 'OutputCapable'
