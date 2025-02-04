@@ -27,6 +27,7 @@ module Control.OutputCapable.Blocks.Type (
   type Output,
   getOutputSequence,
   getOutputSequenceWithRating,
+  getOutputSequenceAndResult,
   toOutputCapable,
   -- ** for 'SpecialOutput'
   type SpecialOutput,
@@ -43,6 +44,7 @@ module Control.OutputCapable.Blocks.Type (
 import qualified Control.OutputCapable.Blocks.Generic.Type as Generic (
   foldMapOutputBy,
   getOutputSequence,
+  getOutputSequenceAndResult,
   getOutputSequenceWithRating,
   inspectTranslations,
   toOutputCapable,
@@ -54,6 +56,7 @@ import qualified Data.Map                         as M (keys)
 import Control.OutputCapable.Blocks.Generic.Type (GenericOutput (..))
 import Control.OutputCapable.Blocks (
   LangM,
+  LangM',
   Language (English),
   OutputCapable,
   Rated,
@@ -84,7 +87,20 @@ getOutputSequenceWithRating
   :: Functor m
   => Rated (ReportT Output m)
   -> m (Maybe Rational, [Output])
-getOutputSequenceWithRating = Generic.getOutputSequenceWithRating English
+getOutputSequenceWithRating = getOutputSequenceAndResult
+
+{-|
+Converts 'OutputCapable' value using 'GenericOutput'
+into a result and a list of 'Output'
+
+Consider using 'getOutputSequenceWithRating'
+in order to get better error messages on implementation errors.
+-}
+getOutputSequenceAndResult
+  :: Functor m
+  => LangM' (ReportT Output m) a
+  -> m (Maybe a, [Output])
+getOutputSequenceAndResult = Generic.getOutputSequenceAndResult English
 
 {- |
 Convert a list of 'Output' into any instance of 'OutputCapable'
