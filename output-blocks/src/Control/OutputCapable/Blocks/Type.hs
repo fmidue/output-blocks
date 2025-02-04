@@ -94,12 +94,13 @@ Converts 'OutputCapable' value using 'GenericOutput'
 into a result and a list of 'Output'
 
 Consider using 'getOutputSequenceWithRating'
+in order to get better error messages on implementation errors.
 -}
 getOutputSequenceAndResult
   :: Functor m
   => LangM' (ReportT Output m) a
   -> m (Maybe a, [Output])
-getOutputSequenceAndResult = Generic.getOutputSequenceAndResult English
+getOutputSequenceAndResult = getOutputSequenceWithRating
 
 {- |
 Convert a list of 'Output' into any instance of 'OutputCapable'
