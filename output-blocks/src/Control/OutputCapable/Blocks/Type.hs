@@ -91,7 +91,7 @@ getOutputSequenceWithRating = Generic.getOutputSequenceWithRating English
 
 {-|
 Converts 'OutputCapable' value using 'GenericOutput'
-into a result and a list of 'GenericOutput'
+into a result and a list of 'Output'
 
 Consider using 'getOutputSequenceWithRating'
 or even more specific versions of 'Control.OutputCapable.Blocks.Type'
