@@ -1,5 +1,6 @@
 ---
 name: output-blocks-latex
+version: 0.0.0.1
 extra-source-files: [ ]
 build-tools: [ ]
 ghc-options:

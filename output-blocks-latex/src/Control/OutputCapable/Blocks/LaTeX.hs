@@ -4,16 +4,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-|
+Provides helper functions in order to generate latex output for output blocks.
+-}
 module Control.OutputCapable.Blocks.LaTeX (
   getLaTeX,
+  readToEnglishAndGerman,
+  readToLatex,
   toLaTeX,
   ) where
 
 import qualified Data.Map as M
 
 import Control.OutputCapable.Blocks (
-  Language,
-  GenericLangM (LangM),
+  Language (English, German),
+  LangM',
+  GenericLangM (LangM, unLangM),
   GenericOut (Localised),
   GenericOutputCapable (..),
   GenericReportT (Report),
@@ -32,6 +38,8 @@ import Control.OutputCapable.Blocks.Generic (
   runLangMReport,
   )
 
+import Control.Monad.IO.Class           (MonadIO (liftIO))
+import Control.Monad.Trans.Maybe        (MaybeT (MaybeT), runMaybeT)
 import Control.Monad.Writer (MonadWriter (tell))
 import Data.Bifunctor (first)
 import Data.Foldable (
@@ -45,10 +53,45 @@ import Text.LaTeX.Base.Syntax (
   LaTeX (TeXComm, TeXEnv, TeXRaw),
   TeXArg (FixArg, OptArg),
   )
+import Text.Read (readMaybe)
+
+{-|
+A convenience wrapper to 'read' one parameter and apply it to the given
+'LangM'' producer function in order to return 'LaTeX' output
+for 'English' and 'German'.
+
+Uses 'toLaTeX' and therefore throws a RuntimeException if the output contains
+a fail.
+-}
+readToEnglishAndGerman
+  :: (MonadIO m, Read t)
+  => (t -> LangM' (ReportT LaTeX IO) b)
+  -> String
+  -> m (Maybe (LaTeX, LaTeX))
+readToEnglishAndGerman producer config = do
+  mto <- readToLatex producer config
+  pure $ (\to -> (to English, to German)) <$> mto
+
+{-|
+A convenience wrapper to 'read' one parameter and apply it to the given
+'LangM'' producer function in order to generate 'LaTeX' output.
+
+Uses 'toLaTeX' and therefore throws a RuntimeException if the output contains
+a fail.
+-}
+readToLatex
+  :: (MonadIO m, Read t)
+  => (t -> LangM' (ReportT LaTeX IO) b)
+  -> String
+  -> m (Maybe (Language -> LaTeX))
+readToLatex producer config = runMaybeT $ do
+  producerConfig <- MaybeT $ pure $ readMaybe config
+  liftIO $ toLaTeX (unLangM $ producer producerConfig)
 
 {-|
 Retrieves the function to get LaTeX-Code when provided a 'Language'.
-In contrast to 'execLangM' it throws a RuntimeException on abortion.
+In contrast to 'Control.OutputCapable.Blocks.Generic.execLangM'
+it throws a RuntimeException on abortion.
 -}
 toLaTeX :: Monad m => ReportT LaTeX m a -> m (Language -> LaTeX)
 toLaTeX r = do
