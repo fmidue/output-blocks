@@ -72,8 +72,8 @@ forceReadToEnglishAndGerman
   -> String
   -> m (Maybe (LaTeX, LaTeX))
 forceReadToEnglishAndGerman producer config = do
-  mto <- forceReadToLatex producer config
-  pure $ (\to -> (to English, to German)) <$> mto
+  maybeTo <- forceReadToLatex producer config
+  pure $ (\to -> (to English, to German)) <$> maybeTo
 
 {-|
 A convenience wrapper to 'read' one parameter and apply it to the given
@@ -89,8 +89,8 @@ readToEnglishAndGerman
   -> String
   -> m (Maybe (LaTeX, LaTeX))
 readToEnglishAndGerman producer config = do
-  mto <- readToLatex producer config
-  pure $ (\to -> (to English, to German)) <$> mto
+  maybeTo <- readToLatex producer config
+  pure $ (\to -> (to English, to German)) <$> maybeTo
 
 {-|
 A convenience wrapper to 'read' one parameter and apply it to the given
