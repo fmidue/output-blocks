@@ -8,6 +8,9 @@
 Provides helper functions in order to generate latex output for output blocks.
 -}
 module Control.OutputCapable.Blocks.LaTeX (
+  forceReadToEnglishAndGerman,
+  forceReadToLatex,
+  forceToLaTeX,
   getLaTeX,
   readToEnglishAndGerman,
   readToLatex,
@@ -29,6 +32,7 @@ import Control.OutputCapable.Blocks (
   combineReports,
   combineTwoReports,
   format,
+  getAllOuts,
   getOutsWithResult,
   toAbort,
   toOutput,
@@ -60,6 +64,22 @@ A convenience wrapper to 'read' one parameter and apply it to the given
 'LangM'' producer function in order to return 'LaTeX' output
 for 'English' and 'German'.
 
+It forces the output until abortion (without indicating there was such).
+-}
+forceReadToEnglishAndGerman
+  :: (MonadIO m, Read t)
+  => (t -> LangM' (ReportT LaTeX IO) ())
+  -> String
+  -> m (Maybe (LaTeX, LaTeX))
+forceReadToEnglishAndGerman producer config = do
+  mto <- forceReadToLatex producer config
+  pure $ (\to -> (to English, to German)) <$> mto
+
+{-|
+A convenience wrapper to 'read' one parameter and apply it to the given
+'LangM'' producer function in order to return 'LaTeX' output
+for 'English' and 'German'.
+
 Uses 'toLaTeX' and therefore throws a RuntimeException if the output contains
 a fail.
 -}
@@ -76,6 +96,21 @@ readToEnglishAndGerman producer config = do
 A convenience wrapper to 'read' one parameter and apply it to the given
 'LangM'' producer function in order to generate 'LaTeX' output.
 
+It forces the output until abortion (without indicating there was such).
+-}
+forceReadToLatex
+  :: (MonadIO m, Read t)
+  => (t -> LangM' (ReportT LaTeX IO) ())
+  -> String
+  -> m (Maybe (Language -> LaTeX))
+forceReadToLatex producer config = runMaybeT $ do
+  producerConfig <- MaybeT $ pure $ readMaybe config
+  liftIO $ forceToLaTeX (unLangM $ producer producerConfig)
+
+{-|
+A convenience wrapper to 'read' one parameter and apply it to the given
+'LangM'' producer function in order to generate 'LaTeX' output.
+
 Uses 'toLaTeX' and therefore throws a RuntimeException if the output contains
 a fail.
 -}
@@ -87,6 +122,17 @@ readToLatex
 readToLatex producer config = runMaybeT $ do
   producerConfig <- MaybeT $ pure $ readMaybe config
   liftIO $ toLaTeX (unLangM $ producer producerConfig)
+
+{-|
+Retrieves the function to get LaTeX-Code when provided a 'Language'.
+It forces the output until abortion (without indicating there was such).
+-}
+forceToLaTeX :: Monad m => ReportT LaTeX m () -> m (Language -> LaTeX)
+forceToLaTeX r = do
+  os <- getAllOuts r
+  return $ mconcat (bs os)
+  where
+    bs = fmap toOutput
 
 {-|
 Retrieves the function to get LaTeX-Code when provided a 'Language'.
