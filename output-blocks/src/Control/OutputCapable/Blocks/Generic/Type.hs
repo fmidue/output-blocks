@@ -13,7 +13,7 @@ module Control.OutputCapable.Blocks.Generic.Type
     ( GenericOutput (..)
     , foldMapOutputBy
     , getOutputSequence
-    , getOutputSequenceAndResult
+    , getOutputSequenceWithResult
     , getOutputSequenceWithRating
     , inspectTranslations
     , toOutputCapable
@@ -154,12 +154,12 @@ getOutputSequence
   => language
   -> GenericLangM language (GenericReportT language (GenericOutput language element) m) ()
   -> m [GenericOutput language element]
-getOutputSequence f = (snd <$>) . getOutputSequenceAndResult f
+getOutputSequence f = (snd <$>) . getOutputSequenceWithResult f
 
 
 
 {-|
-More concretely typed alias of 'getOutputSequenceAndResult'
+More concretely typed alias of 'getOutputSequenceWithResult'
 
 Converts graded 'GenericOutputCapable' value using 'GenericOutput'
 into a rating and a list of 'GenericOutput'
@@ -169,7 +169,7 @@ getOutputSequenceWithRating
   => language
   -> GenericLangM language (GenericReportT language (GenericOutput language element) m) Rational
   -> m (Maybe Rational, [GenericOutput language element])
-getOutputSequenceWithRating = getOutputSequenceAndResult
+getOutputSequenceWithRating = getOutputSequenceWithResult
 
 
 {-|
@@ -180,12 +180,12 @@ Consider using 'getOutputSequenceWithRating'
 or even more specific versions of 'Control.OutputCapable.Blocks.Type'
 in order to get better error messages on implementation errors.
 -}
-getOutputSequenceAndResult
+getOutputSequenceWithResult
   :: Functor m
   => language
   -> GenericLangM language (GenericReportT language (GenericOutput language element) m) a
   -> m (Maybe a, [GenericOutput language element])
-getOutputSequenceAndResult language lm = second unbox <$>
+getOutputSequenceWithResult language lm = second unbox <$>
     runLangMReportMultiLang (Paragraph []) gather ($ language) lm
   where
     gather (Paragraph xs) x = Paragraph (xs ++ [x])
