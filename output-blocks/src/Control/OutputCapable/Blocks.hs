@@ -61,6 +61,7 @@ module Control.OutputCapable.Blocks (
   printSolutionAndAssert,
   printSolutionAndAssertMinimum,
   reRefuse,
+  reRefuseLangM,
   singleChoice,
   singleChoiceSyntax,
   continueOrAbort,
@@ -430,8 +431,32 @@ reRefuse
   => Rated m
   -> LangM m
   -> Rated m
-reRefuse xs ys =
-  recoverWith (pure 0) xs
+reRefuse = reRefuseWith 0
+
+{-|
+Append some remarks after a potential rejection.
+But re-reject afterwards (if it was rejected before).
+
+@since 0.4.0.3
+-}
+reRefuseLangM
+  :: (Alternative m, Monad m, OutputCapable m)
+  => LangM m
+  -> LangM m
+  -> LangM m
+reRefuseLangM = reRefuseWith ()
+
+{-|
+Append some remarks after a potential rejection.
+But re-reject afterwards (if it was rejected before).
+-}
+reRefuseWith :: (Alternative m, Monad m, GenericOutputCapable l m)
+  => b
+  -> GenericLangM l m b
+  -> GenericLangM l m a
+  -> GenericLangM l m b
+reRefuseWith bottom xs ys =
+  recoverWith (pure bottom) xs
     $>>= \x -> ys
     $>> either (refuse (pure ()) *>) pure x
 
