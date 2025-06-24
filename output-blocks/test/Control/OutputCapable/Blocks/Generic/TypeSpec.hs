@@ -10,7 +10,7 @@ import Test.Hspec                (Spec, describe, it)
 import Test.QuickCheck           (Arbitrary(..), Gen, chooseInt, forAll, vectorOf)
 import Test.QuickCheck.Monadic   (assert, monadicIO, run)
 
-import Control.OutputCapable.Blocks     (Language (English))
+import Control.OutputCapable.Blocks     (Language (English), assertion, recoverFrom)
 import Control.OutputCapable.Blocks.Generic.Type (
   GenericOutput (..),
   getOutputSequence,
@@ -38,7 +38,7 @@ instance {-# Overlapping #-} Arbitrary (Map Language String) where
 
 instance Arbitrary (GenericOutput Language ()) where
   arbitrary = genericArbitrary'
-    $ 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % (0 :: W "Special") % ()
+    $ 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % (0 :: W "Special") % ()
 
 
 
@@ -54,5 +54,5 @@ spec = do
              forAll arbitrary $
               \outputSequence -> monadicIO $ do
                 new <- run $ getOutputSequence English
-                  $ toOutputCapable pure outputSequence
+                  $ toOutputCapable pure (\b -> recoverFrom . assertion b) outputSequence
                 assert $ new == outputSequence
