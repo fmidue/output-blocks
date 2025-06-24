@@ -29,6 +29,7 @@ import Control.OutputCapable.Blocks.Generic (
   combineTwoReports,
   format,
   runLangMReportMultiLang,
+  toAbort,
   translate,
   translateCode,
   )
@@ -47,16 +48,14 @@ Can be used to Prototype without defining additional instances.
 The result can be converted into any member of the class.
 -}
 data GenericOutput language element
-    = Assertion Bool [GenericOutput language element]
-    -- ^ abortion is expected at 'False'
+    = YesNo Bool [GenericOutput language element]
+    -- ^ output condition check, but continue afterwards
     | Image FilePath
     -- ^ a single image
     | Images (Map String FilePath)
     -- ^ multiple images with a text tag that is to be printed (e.g. a number)
     | Paragraph [GenericOutput language element]
     -- ^ to group (and separate) output
-    | Refuse [GenericOutput language element]
-    -- ^ abort with output
     | Enumerated [([GenericOutput language element], [GenericOutput language element])]
     -- ^ an enumeration with the enumerator first and content second
     | Itemized [[GenericOutput language element]]
@@ -85,7 +84,7 @@ instance
     GenericReportT language (GenericOutput language element) m
     )
   where
-  assertion b = alignOutput (Assertion b)
+  assertion b = (if b then id else toAbort) . alignOutput (YesNo b)
 
   image = format . Image
 
@@ -93,7 +92,7 @@ instance
 
   paragraph = alignOutput Paragraph
 
-  refuse = alignOutput Refuse
+  refuse = toAbort
 
   enumerateM f tups = combineReports
                         (Enumerated . concatMap expose . concat)
@@ -124,16 +123,16 @@ Convert a list of 'GenericOutput' into any member of 'GenericOutputCapable'
 toOutputCapable
   :: GenericOutputCapable language m
   => (element -> GenericLangM language m ())
+  -> (Bool -> GenericLangM language m () -> GenericLangM language m ())
   -> [GenericOutput language element]
   -> GenericLangM language m ()
-toOutputCapable toOutputPart parts = for_ parts toInterface
+toOutputCapable toOutputPart yesNoDisplay parts = for_ parts toInterface
   where
     toInterface res = case res of
-      Assertion b xs   -> assertion b $ toOutputCapable' xs
+      YesNo b xs       -> yesNoDisplay b $ toOutputCapable' xs
       Image path       -> image path
       Images m         -> images id id m
       Paragraph xs     -> paragraph $ toOutputCapable' xs
-      Refuse xs        -> refuse $ toOutputCapable' xs
       Enumerated list  -> enumerateM id $ map (both toOutputCapable') list
       Itemized xs      -> itemizeM $ map toOutputCapable' xs
       Indented xs      -> indent $ toOutputCapable' xs
@@ -141,7 +140,7 @@ toOutputCapable toOutputPart parts = for_ parts toInterface
       Code m           -> translateCode $ put m
       Translated m     -> translate $ put m
       Special element  -> toOutputPart element
-    toOutputCapable' = toOutputCapable toOutputPart
+    toOutputCapable' = toOutputCapable toOutputPart yesNoDisplay
 
 
 
@@ -206,11 +205,10 @@ foldMapOutputBy
   -> GenericOutput language element
   -> a
 foldMapOutputBy f evaluate x = case x of
-  Assertion _ xs    -> foldr (f . descend) (evaluate x) xs
+  YesNo _ xs        -> foldr (f . descend) (evaluate x) xs
   Image {}          -> evaluate x
   Images {}         -> evaluate x
   Paragraph xs      -> foldr (f . descend) (evaluate x) xs
-  Refuse xs         -> foldr (f . descend) (evaluate x) xs
   Enumerated xs   ->
     foldr
     (\next done -> uncurry f $ both (foldr (f . descend) done) next)
@@ -232,12 +230,10 @@ Checks whether any refusal exists within the given 'GenericOutput'.
 -}
 withRefusal :: (element -> Bool) -> GenericOutput language element -> Bool
 withRefusal checkSpecial = foldMapOutputBy (||) $ \case
-  Assertion False _ -> True
-  Assertion True _  -> False
+  YesNo {}          -> False
   Image {}          -> False
   Images {}         -> False
   Paragraph {}      -> False
-  Refuse {}         -> True
   Enumerated {}     -> False
   Itemized {}       -> False
   Indented {}       -> False
@@ -259,11 +255,10 @@ inspectTranslations
   -> GenericOutput language element
   -> a
 inspectTranslations inspectSpecial inspectTranslation f z = foldMapOutputBy f $ \case
-  Assertion {}      -> z
+  YesNo {}          -> z
   Image {}          -> z
   Images {}         -> z
   Paragraph {}      -> z
-  Refuse {}         -> z
   Enumerated {}     -> z
   Itemized {}       -> z
   Indented {}       -> z
