@@ -10,11 +10,10 @@ Both type synonyms are also provided.
 -}
 module Control.OutputCapable.Blocks.Type (
   -- * common constructors
-  pattern Assertion,
+  pattern YesNo,
   pattern Image,
   pattern Images,
   pattern Paragraph,
-  pattern Refuse,
   pattern Enumerated,
   pattern Itemized,
   pattern Indented,
@@ -61,6 +60,7 @@ import Control.OutputCapable.Blocks (
   OutputCapable,
   Rated,
   ReportT,
+  yesNo,
   )
 
 import Data.List                        ((\\))
@@ -106,7 +106,7 @@ getOutputSequenceWithResult = Generic.getOutputSequenceWithResult English
 Convert a list of 'Output' into any instance of 'OutputCapable'
 -}
 toOutputCapable :: OutputCapable m => [Output] -> LangM m
-toOutputCapable = Generic.toOutputCapable pure
+toOutputCapable = Generic.toOutputCapable pure yesNo
 
 {-|
 Converts non graded 'OutputCapable' value using 'GenericOutput'
@@ -136,7 +136,7 @@ specialToOutputCapable
   => (element -> LangM m)
   -> [SpecialOutput element]
   -> LangM m
-specialToOutputCapable = Generic.toOutputCapable
+specialToOutputCapable = flip Generic.toOutputCapable yesNo
 
 {-|
 A right fold with the possibility to inspect every node.
