@@ -35,7 +35,6 @@ module Control.OutputCapable.Blocks.Type (
   getSpecialOutputSequence,
   getSpecialOutputSequenceWithRating,
   specialToOutputCapable,
-  withRefusal,
   -- ** other
   checkTranslation,
   ) where
@@ -47,7 +46,6 @@ import qualified Control.OutputCapable.Blocks.Generic.Type as Generic (
   getOutputSequenceWithRating,
   inspectTranslations,
   toOutputCapable,
-  withRefusal,
   )
 
 import qualified Data.Map                         as M (keys)
@@ -149,14 +147,6 @@ foldMapOutputBy
   -> SpecialOutput element
   -> a
 foldMapOutputBy = Generic.foldMapOutputBy
-
-{-|
-Checks whether any refusal exists within the given 'GenericOutput'.
-
-@since: 0.3.0.1
--}
-withRefusal :: (element -> Bool) -> SpecialOutput element -> Bool
-withRefusal = Generic.withRefusal
 
 {-|
 Checks a 'Map' for missing translations and reports those as list.

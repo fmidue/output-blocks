@@ -17,7 +17,6 @@ module Control.OutputCapable.Blocks.Generic.Type
     , getOutputSequenceWithRating
     , inspectTranslations
     , toOutputCapable
-    , withRefusal
     ) where
 
 import Control.OutputCapable.Blocks.Generic (
@@ -222,25 +221,6 @@ foldMapOutputBy f evaluate x = case x of
   Special {}        -> evaluate x
   where
     descend = foldMapOutputBy f evaluate
-
-{-|
-Checks whether any refusal exists within the given 'GenericOutput'.
-
-@since: 0.3.0.1
--}
-withRefusal :: (element -> Bool) -> GenericOutput language element -> Bool
-withRefusal checkSpecial = foldMapOutputBy (||) $ \case
-  YesNo {}          -> False
-  Image {}          -> False
-  Images {}         -> False
-  Paragraph {}      -> False
-  Enumerated {}     -> False
-  Itemized {}       -> False
-  Indented {}       -> False
-  Latex {}          -> False
-  Code {}           -> False
-  Translated {}     -> False
-  Special element   -> checkSpecial element
 
 {-|
 Inspects translations provided the given inspect and combining functions.
