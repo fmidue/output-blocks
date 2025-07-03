@@ -213,6 +213,7 @@ instance GenericOutputCapable Language (ReportT LaTeX IO) where
     (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty)
     . sequenceA_
   latex = format . TeXRaw . pack . ('$':) . (++ "$")
+  folding _ t c = translated t *> format par *> indent c
   code = format . TeXEnv "verbatim" [] . TeXRaw . pack
   translatedCode lm = LangM
     $ Report . tell . (:[]) . Localised
