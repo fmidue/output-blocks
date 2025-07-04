@@ -3,6 +3,7 @@ GADTs
 GHC
 Hspec
 Leijen
+minimisable
 MReport
 TStrict
 concat
