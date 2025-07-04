@@ -504,7 +504,7 @@ translations :: State (Map l a) () -> Map l a
 translations = Generic.translations
 
 {-|
-This is a specified version of 'Generic.collapsible'
+This is a specified version of 'Generic.collapsed'
 which enforces the usage pattern.
 You should always prefer this specified version over the generic.
 -}
