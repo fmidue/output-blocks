@@ -5,6 +5,7 @@ Hspec
 Leijen
 MReport
 TStrict
+UTF
 concat
 fmap
 foldl
