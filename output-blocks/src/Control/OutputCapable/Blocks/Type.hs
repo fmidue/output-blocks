@@ -18,6 +18,7 @@ module Control.OutputCapable.Blocks.Type (
   pattern Itemized,
   pattern Indented,
   pattern Latex,
+  pattern Folded,
   pattern Code,
   pattern Translated,
   pattern Special,
