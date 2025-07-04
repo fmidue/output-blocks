@@ -508,7 +508,12 @@ This is a specified version of 'Generic.collapsible'
 which enforces the usage pattern.
 You should always prefer this specified version over the generic.
 -}
-collapsed :: GenericOutputCapable l m => Bool -> State (Map l String) () -> GenericLangM l m () -> GenericLangM l m ()
+collapsed
+  :: GenericOutputCapable l m
+  => Bool
+  -> State (Map l String) ()
+  -> GenericLangM l m ()
+  -> GenericLangM l m ()
 collapsed = Generic.collapsed
 
 {-|
