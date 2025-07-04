@@ -42,7 +42,7 @@ module Control.OutputCapable.Blocks (
   toAbort,
   -- * Translation
   ArticleToUse (..),
-  collapsible,
+  collapsed,
   english,
   german,
   localise,
@@ -72,7 +72,7 @@ module Control.OutputCapable.Blocks (
 
 import qualified Control.OutputCapable.Blocks.Generic as Generic (
   alignOutput,
-  collapsible,
+  collapsed,
   combineReports,
   combineTwoReports,
   toAbort,
@@ -508,8 +508,8 @@ This is a specified version of 'Generic.collapsible'
 which enforces the usage pattern.
 You should always prefer this specified version over the generic.
 -}
-collapsible :: GenericOutputCapable l m => Bool -> State (Map l String) () -> GenericLangM l m () -> GenericLangM l m ()
-collapsible = Generic.collapsible
+collapsed :: GenericOutputCapable l m => Bool -> State (Map l String) () -> GenericLangM l m () -> GenericLangM l m ()
+collapsed = Generic.collapsed
 
 {-|
 Provide an English translation
@@ -566,11 +566,11 @@ instance (l ~ Language)
     pure ()
   refuse        = toAbort
   latex         = format . putStrLn . ("LaTeX: " ++)
-  folding b t c = do
-    format $ putStr $ "(" ++ (if b then "-" else "+") ++ ") "
+  folded b t c = do
+    format $ putStr $ "(" ++ (if b then "+" else "-") ++ ") "
     translated t
     format $ putStrLn ""
-    when b (indent c)
+    unless b (indent c)
     pure ()
   code          = format . putStr . (\xs -> " <" ++ xs ++ "> ")
   translatedCode lm =

@@ -37,7 +37,7 @@ module Control.OutputCapable.Blocks.Generic (
   ($=<<),
   ($>>),
   ($>>=),
-  collapsible,
+  collapsed,
   evalLangM,
   execLangM,
   runLangMReport,
@@ -117,7 +117,7 @@ class (Applicative m, Ord l) => GenericOutputCapable l m where
   -- | for LaTeX-Math code (i.e. without surrounding @$@)
   latex      :: String -> GenericLangM l m ()
   -- | for minimisable output with a default state (open/closed) and title
-  folding :: Bool -> (l -> String) -> GenericLangM l m () -> GenericLangM l m ()
+  folded :: Bool -> (l -> String) -> GenericLangM l m () -> GenericLangM l m ()
   -- | for fixed width fonts (i.e. typewriter style)
   code       :: String -> GenericLangM l m ()
   code = translatedCode . const
@@ -267,7 +267,7 @@ instance Ord l => GenericOutputCapable l Maybe where
   itemizeM        = sequenceA_
   indent xs       = xs
   latex _         = pure ()
-  folding _ _ _ = pure ()
+  folded _ _ _ = pure ()
   code _          = pure ()
   translatedCode _ = pure ()
   translated _    = pure ()
@@ -295,13 +295,13 @@ translations = flip execState M.empty
 mapToMatching :: Ord language => Map language String -> language -> String
 mapToMatching l = fromMaybe "" . flip M.lookup l
 
-collapsible
+collapsed
   :: GenericOutputCapable language m
   => Bool
   -> State (Map language String) a1
   -> GenericLangM language m ()
   -> GenericLangM language m ()
-collapsible b t = folding b (mapToMatching $ translations t)
+collapsed b t = folded b (mapToMatching $ translations t)
 
 {-|
 Provided a neutral element and a function to combine generated output

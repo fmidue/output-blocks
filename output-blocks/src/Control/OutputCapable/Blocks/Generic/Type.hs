@@ -24,7 +24,7 @@ import Control.OutputCapable.Blocks.Generic (
   GenericOutputCapable (..),
   GenericReportT,
   alignOutput,
-  collapsible,
+  collapsed,
   combineReports,
   combineTwoReports,
   format,
@@ -64,7 +64,7 @@ data GenericOutput language element
     -- ^ for indenting output
     | Latex String
     -- ^ latex code (for formulas and text blocks only)
-    | Folding Bool (Map language String) [GenericOutput language element]
+    | Folded Bool (Map language String) [GenericOutput language element]
     -- ^ minimisable output with default open-state, title and content
     | Code (Map language String)
     -- ^ to output as text with fixed width, providing translations
@@ -113,7 +113,7 @@ instance
 
   latex = format . Latex
 
-  folding b t = alignOutput (Folding b $ toMap t)
+  folded b t = alignOutput (Folded b $ toMap t)
 
   translatedCode =  format . Code . toMap
 
@@ -141,7 +141,7 @@ toOutputCapable toOutputPart yesNoDisplay parts = for_ parts toInterface
       Itemized xs      -> itemizeM $ map toOutputCapable' xs
       Indented xs      -> indent $ toOutputCapable' xs
       Latex s          -> latex s
-      Folding b t c    -> collapsible b (put t) $ toOutputCapable' c
+      Folded b t c     -> collapsed b (put t) $ toOutputCapable' c
       Code m           -> translateCode $ put m
       Translated m     -> translate $ put m
       Special element  -> toOutputPart element
@@ -222,7 +222,7 @@ foldMapOutputBy f evaluate x = case x of
   Itemized xs       -> foldr (flip (foldr (f . descend))) (evaluate x) xs
   Indented xs       -> foldr (f . descend) (evaluate x) xs
   Latex {}          -> evaluate x
-  Folding _ _ xs    -> foldr (f . descend) (evaluate x) xs
+  Folded _ _ xs     -> foldr (f . descend) (evaluate x) xs
   Code {}           -> evaluate x
   Translated {}     -> evaluate x
   Special {}        -> evaluate x
@@ -250,7 +250,7 @@ inspectTranslations inspectSpecial inspectTranslation f z = foldMapOutputBy f $ 
   Itemized {}       -> z
   Indented {}       -> z
   Latex {}          -> z
-  Folding _ t _     -> inspectTranslation t
+  Folded _ t _      -> inspectTranslation t
   Code ts           -> inspectTranslation ts
   Translated ts     -> inspectTranslation ts
   Special element   -> inspectSpecial element
