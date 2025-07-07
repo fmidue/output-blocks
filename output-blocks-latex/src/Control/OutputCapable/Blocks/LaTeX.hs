@@ -39,6 +39,7 @@ import Control.OutputCapable.Blocks (
   )
 import Control.OutputCapable.Blocks.Generic (
   RunnableOutputCapable (..),
+  ($=<<),
   runLangMReport,
   )
 
@@ -52,7 +53,9 @@ import Data.Foldable (
 #endif
   sequenceA_,
   )
+import Data.String (fromString)
 import Data.Text (pack)
+import Data.Unique (hashUnique, newUnique)
 import Text.LaTeX.Base.Syntax (
   LaTeX (TeXComm, TeXEnv, TeXRaw),
   TeXArg (FixArg, OptArg),
@@ -213,7 +216,20 @@ instance GenericOutputCapable Language (ReportT LaTeX IO) where
     (TeXEnv "itemize" [] . foldr (\x y -> TeXComm "item" [] <> x <> y) mempty)
     . sequenceA_
   latex = format . TeXRaw . pack . ('$':) . (++ "$")
-  folded _ t c = translated t *> format par *> indent c
+  folded _ t c =
+      (\lId -> combineTwoReports
+        (\xs ys -> mconcat
+          [ TeXComm "switchocg" [lId, FixArg $ mconcat xs]
+          , par
+          , TeXEnv "ocg" [lId, lId, FixArg "on"] (mconcat ys)
+          , par
+          ]
+        )
+        (translated t)
+        c
+      ) $=<<
+      liftIO $
+        FixArg . ("layer" <>) . fromString . show . hashUnique <$> newUnique
   code = format . TeXEnv "verbatim" [] . TeXRaw . pack
   translatedCode lm = LangM
     $ Report . tell . (:[]) . Localised
