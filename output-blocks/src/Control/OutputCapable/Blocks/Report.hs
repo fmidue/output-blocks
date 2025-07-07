@@ -71,17 +71,17 @@ localise l lm = fromMaybe nonExistent $ M.lookup l lm
       | otherwise = snd $ M.findMin lm
 
 {-|
-This is a specified version of 'GenericReport.getAllOuts'
+This is a more specific version of 'GenericReport.getAllOuts'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 getAllOuts :: Monad m => GenericReportT l o m () -> m [GenericOut l o]
 getAllOuts = GenericReport.getAllOuts
 
 {-|
-This is a specified version of 'GenericReport.combineReports'
+This is a more specific version of 'GenericReport.combineReports'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 combineReports
   :: Monad m
@@ -91,9 +91,9 @@ combineReports
 combineReports = GenericReport.combineReports
 
 {-|
-This is a specified version of 'GenericReport.alignOutput'
+This is a more specific version of 'GenericReport.alignOutput'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 alignOutput
   :: Monad m
@@ -103,9 +103,9 @@ alignOutput
 alignOutput = GenericReport.alignOutput
 
 {-|
-This is a specified version of 'GenericReport.combineTwoReports'
+This is a more specific version of 'GenericReport.combineTwoReports'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 combineTwoReports
   :: Monad m
@@ -116,9 +116,9 @@ combineTwoReports
 combineTwoReports = GenericReport.combineTwoReports
 
 {-|
-This is a specified version of 'GenericReport.toAbort'
+This is a more specific version of 'GenericReport.toAbort'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 toAbort
   :: Monad m
