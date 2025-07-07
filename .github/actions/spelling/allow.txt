@@ -15,5 +15,7 @@ includegraphics
 keepaspectratio
 mconcat
 mempty
+ocg
 snd
+switchocg
 uncurry
