@@ -38,7 +38,7 @@ instance {-# Overlapping #-} Arbitrary (Map Language String) where
 
 instance Arbitrary (GenericOutput Language ()) where
   arbitrary = genericArbitrary'
-    $ 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % (0 :: W "Special") % ()
+    $ 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % 1 % (0 :: W "Special") % ()
 
 
 

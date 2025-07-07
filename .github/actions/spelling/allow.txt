@@ -3,6 +3,7 @@ GADTs
 GHC
 Hspec
 Leijen
+minimisable
 MReport
 TStrict
 UTF
@@ -15,5 +16,7 @@ includegraphics
 keepaspectratio
 mconcat
 mempty
+ocg
 snd
+switchocg
 uncurry
