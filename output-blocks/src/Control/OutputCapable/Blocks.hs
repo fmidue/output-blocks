@@ -474,9 +474,9 @@ localise l lm = fromMaybe nonExistent $ M.lookup l lm
       | otherwise = snd $ M.findMin lm
 
 {-|
-This is a specified version of 'Generic.translate'
+This is a more specific version of 'Generic.translate'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 translate
   :: GenericOutputCapable l m
@@ -485,9 +485,9 @@ translate
 translate = Generic.translate
 
 {-|
-This is a specified version of 'Generic.translateCode'
+This is a more specific version of 'Generic.translateCode'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 translateCode
   :: GenericOutputCapable l m
@@ -496,17 +496,17 @@ translateCode
 translateCode = Generic.translateCode
 
 {-|
-This is a specified version of 'Generic.translations'
+This is a more specific version of 'Generic.translations'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 translations :: State (Map l a) () -> Map l a
 translations = Generic.translations
 
 {-|
-This is a specified version of 'Generic.collapsed'
+This is a more specific version of 'Generic.collapsed'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 collapsed
   :: GenericOutputCapable l m
@@ -590,9 +590,9 @@ instance l ~ Language
   runLangM = runLangMReport (return ()) (>>)
 
 {-|
-This is a specified version of 'Generic.combineReports'
+This is a more specific version of 'Generic.combineReports'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 combineReports
   :: Monad m
@@ -602,9 +602,9 @@ combineReports
 combineReports = Generic.combineReports
 
 {-|
-This is a specified version of 'Generic.alignOutput'
+This is a more specific version of 'Generic.alignOutput'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 alignOutput
   :: Monad m
@@ -614,9 +614,9 @@ alignOutput
 alignOutput = Generic.alignOutput
 
 {-|
-This is a specified version of 'Generic.combineTwoReports'
+This is a more specific version of 'Generic.combineTwoReports'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 combineTwoReports
   :: Monad m
@@ -627,9 +627,9 @@ combineTwoReports
 combineTwoReports = Generic.combineTwoReports
 
 {-|
-This is a specified version of 'Generic.toAbort'
+This is a more specific version of 'Generic.toAbort'
 which enforces the usage pattern.
-You should always prefer this specified version over the generic.
+You should always prefer this version over the generic.
 -}
 toAbort
   :: Monad m
