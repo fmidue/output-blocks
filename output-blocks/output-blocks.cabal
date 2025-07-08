@@ -10,8 +10,6 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Capabilities.Cache
-      Capabilities.Cache.IO
       Control.Functor.Trans
       Control.OutputCapable.Blocks
       Control.OutputCapable.Blocks.Debug
@@ -26,18 +24,14 @@ library
       src
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-depends:
-      SHA
-    , base
-    , bytestring
+      base
     , containers
-    , directory
     , exceptions
     , extra
     , mtl
     , pretty
     , text
     , transformers
-    , utf8-string
     , utility-ht
     , wl-pprint-text
   default-language: Haskell2010
@@ -53,11 +47,8 @@ test-suite output-blocks-test
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       QuickCheck >=2.14
-    , SHA
     , base
-    , bytestring
     , containers
-    , directory
     , exceptions
     , extra
     , generic-random
@@ -67,7 +58,6 @@ test-suite output-blocks-test
     , pretty
     , text
     , transformers
-    , utf8-string
     , utility-ht
     , wl-pprint-text
   default-language: Haskell2010

@@ -13,11 +13,8 @@ ghc-options:
   - -Wwarn=incomplete-uni-patterns
   - -Wwarn=orphans
 dependencies:
-  - SHA
   - base
-  - bytestring
   - containers
-  - directory
   - extra
   - mtl
   - pretty
@@ -25,13 +22,10 @@ dependencies:
   - transformers
   - utility-ht
   - exceptions
-  - utf8-string
   - wl-pprint-text
 library:
   source-dirs: src
   exposed-modules:
-    - Capabilities.Cache
-    - Capabilities.Cache.IO
     - Control.Functor.Trans
     - Control.OutputCapable.Blocks
     - Control.OutputCapable.Blocks.Debug
