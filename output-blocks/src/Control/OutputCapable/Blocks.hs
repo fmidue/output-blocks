@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -116,6 +117,7 @@ import Control.Monad.Writer (
   MonadWriter (tell),
   )
 import Data.Containers.ListUtils        (nubOrd)
+import Data.Data                        (Data)
 import Data.Foldable                    (for_, traverse_)
 import Data.Map                         (Map,foldrWithKey)
 import Data.Maybe                       (fromMaybe, isJust)
@@ -320,7 +322,7 @@ data ArticleToUse
   -- ^ use definite article(s)
   | IndefiniteArticle
   -- ^ use indefinite article(s)
-  deriving (Eq, Generic, Read, Show)
+  deriving (Eq, Generic, Read, Show, Data)
 
 {-|
 Outputs the correct solution (if given)
