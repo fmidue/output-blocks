@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -34,6 +35,7 @@ import Control.OutputCapable.Blocks.Generic (
   translateCode,
   )
 import Control.Monad.Trans.State    (put)
+import Data.Data                    (Data)
 import Data.Foldable                (for_)
 import Data.Map                     (Map)
 import Data.Tuple.Extra             (dupe, both, first, second)
@@ -74,7 +76,7 @@ data GenericOutput language element
     -- ^ allows abbreviating several complex parts
     --   which have special rendering functions
     --   which are not easily representable as ADT
-    deriving (Eq, Functor, Foldable, Generic, Read, Show)
+    deriving (Eq, Functor, Foldable, Generic, Read, Show, Data)
 
 {-|
 OutputCapable instances for 'GenericOutput',
