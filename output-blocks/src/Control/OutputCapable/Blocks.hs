@@ -322,7 +322,7 @@ data ArticleToUse
   -- ^ use definite article(s)
   | IndefiniteArticle
   -- ^ use indefinite article(s)
-  deriving (Eq, Generic, Read, Show, Data)
+  deriving (Data, Eq, Generic, Read, Show)
 
 {-|
 Outputs the correct solution (if given)

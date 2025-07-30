@@ -76,7 +76,7 @@ data GenericOutput language element
     -- ^ allows abbreviating several complex parts
     --   which have special rendering functions
     --   which are not easily representable as ADT
-    deriving (Eq, Functor, Foldable, Generic, Read, Show, Data)
+    deriving (Data, Eq, Functor, Foldable, Generic, Read, Show)
 
 {-|
 OutputCapable instances for 'GenericOutput',
