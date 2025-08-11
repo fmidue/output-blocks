@@ -270,14 +270,14 @@ extendedMultipleChoice
     isCorrect = M.null madeUp && and chosenTrue
     points = gradeMultipleChoice punishment targeted solution choices
     correctnessCheck = yesNo isCorrect $ multiLang [
-      (English, "All given " ++ localise English what ++ " are correct?"),
+      (English, "All indicated " ++ localise English what ++ " are correct?"),
       (German, "Alle angegebenen " ++ localise German what ++ " sind korrekt?")
       ]
     answers = M.intersectionWith (==) solution choices
     isComplete = and answers && length answers >= unTargetedCorrect targeted
     exhaustivenessCheck = when isCorrect
       $ yesNo isComplete $ multiLang [
-      (English, "The given " ++ localise English what ++ " are exhaustive?"),
+      (English, "The indicated " ++ localise English what ++ " are exhaustive?"),
       (German, "Die angegebenen " ++ localise German what ++ " sind vollzählig?")
       ]
 
