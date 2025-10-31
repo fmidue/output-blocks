@@ -49,9 +49,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          echo "EXTRA_INCLUDE_DIRS=C:/Program Files/OpenSSL-Win64/include" \
+          echo 'EXTRA_INCLUDE_DIRS="C:/Program Files/OpenSSL-Win64/include"' \
             >> "$GITHUB_ENV"
-          echo "EXTRA_LIB_DIRS=C:/Program Files/OpenSSL-Win64/lib" \
+          echo 'EXTRA_LIB_DIRS="C:/Program Files/OpenSSL-Win64/lib"' \
             >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
@@ -113,10 +113,10 @@ jobs:
           set +ex
         env:
           INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs="{0}"', env.EXTRA_INCLUDE_DIRS)
+            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
             || '' }}
           LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-lib-dirs="{0}"', env.EXTRA_LIB_DIRS) || '' }}
+            && format('--extra-lib-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
@@ -130,10 +130,10 @@ jobs:
           set +ex
         env:
           INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs="{0}"', env.EXTRA_INCLUDE_DIRS)
+            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
             || '' }}
           LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-include-dirs="{0}"', env.EXTRA_LIB_DIRS) || '' }}
+            && format('--extra-include-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
