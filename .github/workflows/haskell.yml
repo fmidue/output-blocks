@@ -15,16 +15,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
         plan:
-          - {resolver: lts-18.28}
           - {resolver: lts-19.33}
           - {resolver: lts-20.26}
           - {resolver: lts-21.25}
-          - {resolver: lts-22.18}
-          - {resolver: lts-23.5}
+          - {resolver: lts-22.44}
+          - {resolver: lts-23.28}
+          - {resolver: lts-24.17}
           - {resolver: nightly, stack-yaml: '--stack-yaml=nightly-stack.yaml'}
         exclude:
-          - os: macOS-latest
-            plan: {resolver: lts-18.28}
           - os: macOS-latest
             plan: {resolver: lts-19.33}
         include:
