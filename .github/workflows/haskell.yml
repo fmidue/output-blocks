@@ -42,7 +42,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           PREFIX="$(brew --prefix openssl)"
-          cat <<'EOF' >> "$GITHUB_ENV"
+          cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS="--extra-include-dirs=\"${PREFIX}/include\""
           EXTRA_LIB_DIRS="--extra-lib-dirs=\"${PREFIX}/lib\""
           EOF
@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           PREFIX="C:/Program Files/OpenSSL-Win64"
-          cat <<'EOF' >> "$GITHUB_ENV"
+          cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS="--extra-include-dirs=\"${PREFIX}/include\""
           EXTRA_LIB_DIRS="--extra-lib-dirs=\"${PREFIX}/lib\""
           EOF
