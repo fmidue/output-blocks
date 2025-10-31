@@ -38,12 +38,21 @@ jobs:
       #     apt-get: ${{ matrix.apt-get }}
           brew: ${{ matrix.brew }}
 
-      - name: Set extra directories
+      - name: Set extra directories (macOS)
         if: runner.os == 'macOS'
         run: |
           PREFIX="$(brew --prefix openssl)"
           echo "EXTRA_INCLUDE_DIRS=${PREFIX}/include" >> "$GITHUB_ENV"
           echo "EXTRA_LIB_DIRS=${PREFIX}/lib" >> "$GITHUB_ENV"
+
+      - name: Set extra directories (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "EXTRA_INCLUDE_DIRS=C:/Program Files/OpenSSL-Win64/include" \
+            >> "$GITHUB_ENV"
+          echo "EXTRA_LIB_DIRS=C:/Program Files/OpenSSL-Win64/lib" \
+            >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
 
@@ -94,7 +103,8 @@ jobs:
           enable-stack: true
           stack-no-global: true
 
-      - name: Install dependencies on unix
+      - name: Install dependencies
+        shell: bash
         run: |
           set -ex
           # shellcheck disable=SC2086
@@ -109,18 +119,9 @@ jobs:
             && format('--extra-lib-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
-        if: contains(matrix.os, 'windows') == false
 
-      - name: Install dependencies on windows
-        shell: powershell
-        run: |
-          stack --no-terminal -j 1 --install-ghc ${env:RES} ${env:YML} test --bench --only-dependencies
-        env:
-          RES: "--resolver=${{ matrix.plan.resolver }}"
-          YML: "${{ matrix.plan.stack-yaml }}"
-        if: contains(matrix.os, 'windows')
-
-      - name: Build on unix
+      - name: Build and test
+        shell: bash
         run: |
           set -ex
           # shellcheck disable=SC2086
@@ -135,16 +136,6 @@ jobs:
             && format('--extra-include-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
-        if: contains(matrix.os, 'windows') == false
-
-      - name: Build on windows
-        shell: powershell
-        run: |
-          stack --no-terminal --install-ghc test ${env:RES} ${env:YML} --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
-        env:
-          RES: "--resolver=${{ matrix.plan.resolver }}"
-          YML: "${{ matrix.plan.stack-yaml }}"
-        if: contains(matrix.os, 'windows')
 
       - name: Cache ~/.stack
         uses: actions/cache/save@v4
