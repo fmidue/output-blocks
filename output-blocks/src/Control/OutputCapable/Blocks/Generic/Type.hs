@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -20,6 +21,9 @@ module Control.OutputCapable.Blocks.Generic.Type
     , toOutputCapable
     ) where
 
+import Autolib.Hash                     (Hashable)
+import Autolib.Reader                   (Reader)
+import Autolib.ToDoc                    (ToDoc)
 import Control.OutputCapable.Blocks.Generic (
   GenericLangM,
   GenericOutputCapable (..),
@@ -76,7 +80,7 @@ data GenericOutput language element
     -- ^ allows abbreviating several complex parts
     --   which have special rendering functions
     --   which are not easily representable as ADT
-    deriving (Eq, Functor, Foldable, Generic, Read, Show, Data)
+  deriving (Data, Eq, Foldable, Functor, Generic, Hashable, Read, Reader, Show, ToDoc)
 
 {-|
 OutputCapable instances for 'GenericOutput',

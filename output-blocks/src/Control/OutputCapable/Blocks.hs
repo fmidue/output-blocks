@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -83,6 +84,9 @@ import qualified Control.OutputCapable.Blocks.Generic as Generic (
   )
 import qualified Data.Map as M
 
+import Autolib.Hash                     (Hashable)
+import Autolib.Reader                   (Reader)
+import Autolib.ToDoc                    (ToDoc)
 import Control.Functor.Trans            (FunctorTrans (lift))
 import Control.OutputCapable.Blocks.Generic (
   GenericLangM (..),
@@ -322,7 +326,7 @@ data ArticleToUse
   -- ^ use definite article(s)
   | IndefiniteArticle
   -- ^ use indefinite article(s)
-  deriving (Eq, Generic, Read, Show, Data)
+  deriving (Data, Eq, Generic, Hashable, Read, Reader, Show, ToDoc)
 
 {-|
 Outputs the correct solution (if given)

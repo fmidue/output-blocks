@@ -3,6 +3,7 @@ This module provides a basic 'Language' type and functions for using it
 as well as to this 'Language' specified versions of the generic report
 and output.
 -}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Control.OutputCapable.Blocks.Report (
@@ -39,6 +40,9 @@ import Control.OutputCapable.Blocks.Report.Generic (GenericReportT (..))
 
 import qualified Data.Map               as M
 
+import Autolib.Hash                     (Hashable)
+import Autolib.Reader                   (Reader)
+import Autolib.ToDoc                    (ToDoc)
 import Control.Monad.Identity           (Identity)
 import Control.Monad.State              (State, execState, modify)
 import Data.Data                        (Data)
@@ -47,7 +51,7 @@ import Data.Maybe                       (fromMaybe)
 import GHC.Generics                     (Generic)
 
 data Language = English | German
-  deriving (Bounded, Data, Enum, Eq, Generic, Ord, Read, Show)
+  deriving (Bounded, Data, Enum, Eq, Generic, Hashable, Ord, Read, Reader, Show, ToDoc)
 
 type ReportT = GenericReportT Language
 type Out = GenericOut Language

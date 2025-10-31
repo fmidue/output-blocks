@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.38.0.
+-- This file has been generated from package.yaml by hpack version 0.38.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -24,7 +24,10 @@ library
       src
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans
   build-depends:
-      base
+      autolib-reader
+    , autolib-todoc
+    , autolib-util
+    , base
     , containers
     , exceptions
     , extra
@@ -47,6 +50,9 @@ test-suite output-blocks-test
   ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Werror -Wwarn=incomplete-uni-patterns -Wwarn=orphans -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       QuickCheck >=2.14
+    , autolib-reader
+    , autolib-todoc
+    , autolib-util
     , base
     , containers
     , exceptions

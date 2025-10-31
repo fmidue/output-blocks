@@ -1,6 +1,15 @@
 ---
-resolver: lts-21.25
+resolver: lts-23.28
 packages:
   - output-blocks
   - output-blocks-latex
 extra-deps:
+  - git: https://git.uni-due.de/fmi/autotool-dev
+    commit: 9dc2f51b2dc057564445bc8135b3952e72dae42c
+    subdirs:
+      - base
+      - data
+      - reader
+      - todoc
+      - transport
+      - util
