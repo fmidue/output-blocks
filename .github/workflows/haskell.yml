@@ -42,17 +42,20 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           PREFIX="$(brew --prefix openssl)"
-          echo "EXTRA_INCLUDE_DIRS=${PREFIX}/include" >> "$GITHUB_ENV"
-          echo "EXTRA_LIB_DIRS=${PREFIX}/lib" >> "$GITHUB_ENV"
+          cat <<'EOF' >> "$GITHUB_ENV"
+          EXTRA_INCLUDE_DIRS="--extra-include-dirs=\"${PREFIX}/include\""
+          EXTRA_LIB_DIRS="--extra-lib-dirs=\"${PREFIX}/lib\""
+          EOF
 
       - name: Set extra directories (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          echo 'EXTRA_INCLUDE_DIRS="C:/Program Files/OpenSSL-Win64/include"' \
-            >> "$GITHUB_ENV"
-          echo 'EXTRA_LIB_DIRS="C:/Program Files/OpenSSL-Win64/lib"' \
-            >> "$GITHUB_ENV"
+          PREFIX="C:/Program Files/OpenSSL-Win64"
+          cat <<'EOF' >> "$GITHUB_ENV"
+          EXTRA_INCLUDE_DIRS="--extra-include-dirs=\"${PREFIX}/include\""
+          EXTRA_LIB_DIRS="--extra-lib-dirs=\"${PREFIX}/lib\""
+          EOF
 
       - uses: actions/checkout@v4
 
@@ -112,11 +115,8 @@ jobs:
             test --bench --only-dependencies
           set +ex
         env:
-          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
-            || '' }}
-          LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-lib-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
+          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS }}
+          LIB: ${{ env.EXTRA_LIB_DIRS }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
@@ -129,11 +129,8 @@ jobs:
             test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
-          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
-            || '' }}
-          LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
+          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS }}
+          LIB: ${{ env.EXTRA_LIB_DIRS }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
