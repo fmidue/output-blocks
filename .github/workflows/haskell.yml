@@ -113,10 +113,10 @@ jobs:
           set +ex
         env:
           INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
+            && format('--extra-include-dirs="{0}"', env.EXTRA_INCLUDE_DIRS)
             || '' }}
           LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-lib-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
+            && format('--extra-lib-dirs="{0}"', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
