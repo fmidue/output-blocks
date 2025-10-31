@@ -29,7 +29,7 @@ jobs:
             plan: {resolver: lts-19.33}
         include:
           - os: macOS-latest
-          - brew: openssl
+          - brew: pkg-config openssl
 
     runs-on: ${{ matrix.os }}
 
@@ -39,6 +39,12 @@ jobs:
         with:
       #     apt-get: ${{ matrix.apt-get }}
           brew: ${{ matrix.brew }}
+
+      - name: Setup pkg-config paths (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          export PKG_CONFIG_PATH=$(find /opt/homebrew -name '*.pc' -exec dirname {} \; | paste -sd: -):$PKG_CONFIG_PATH
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
 
