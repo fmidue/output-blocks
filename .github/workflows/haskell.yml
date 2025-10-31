@@ -52,10 +52,10 @@ jobs:
         shell: bash
         run: |
           PREFIX='C:/Program Files/OpenSSL-Win64'
-          cat <<EOF >> "$GITHUB_ENV"
-          EXTRA_INCLUDE_DIRS=--extra-include-dirs="${PREFIX}/include"
-          EXTRA_LIB_DIRS=--extra-lib-dirs="${PREFIX}/lib"
-          EOF
+          {
+            echo "EXTRA_INCLUDE_DIRS=--extra-include-dirs=\"${PREFIX}/include\""
+            echo "EXTRA_LIB_DIRS=--extra-lib-dirs=\"${PREFIX}/lib\""
+          } >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
 
