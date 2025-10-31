@@ -108,7 +108,7 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc "$RES" "$YML" "$LIB" "$INCLUDE" \
+          stack --no-terminal --install-ghc $RES $YML $LIB $INCLUDE \
             test --bench --only-dependencies
           set +ex
         env:
@@ -125,16 +125,15 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc "$RES" "$YML" "$LIB" "$INCLUDE" \
-            test --coverage --bench --no-run-benchmarks \
-            --haddock --no-haddock-deps
+          stack --no-terminal --install-ghc $RES $YML $LIB $INCLUDE \
+            test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
           INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
+            && format('--extra-include-dirs="{0}"', env.EXTRA_INCLUDE_DIRS)
             || '' }}
           LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
+            && format('--extra-include-dirs="{0}"', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
