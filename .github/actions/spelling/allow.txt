@@ -1,6 +1,8 @@
+Autolib
 Bifunctor
 GADTs
 GHC
+Hashable
 Hspec
 Leijen
 minimisable
