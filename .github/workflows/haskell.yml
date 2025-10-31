@@ -43,8 +43,9 @@ jobs:
       - name: Set extra directories
         if: runner.os == 'macOS'
         run: |
-          echo "EXTRA_INCLUDE_DIRS=$(brew --prefix openssl)/include" >> $GITHUB_ENV
-          echo "EXTRA_LIB_DIRS=$(brew --prefix openssl)/lib" >> $GITHUB_ENV
+          PREFIX="$(brew --prefix openssl)"
+          echo "EXTRA_INCLUDE_DIRS=${PREFIX}/include" >> "$GITHUB_ENV"
+          echo "EXTRA_LIB_DIRS=${PREFIX}/lib" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
 
@@ -103,13 +104,13 @@ jobs:
             test --bench --only-dependencies
           set +ex
         env:
+          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
+            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
+            || '' }}
+          LIB: ${{ env.EXTRA_LIB_DIRS
+            && format('--extra-lib-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
-          LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_LIB_DIR) || '' }}
-          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIR)
-            || '' }}
         if: contains(matrix.os, 'windows') == false
 
       - name: Install dependencies on windows
@@ -129,13 +130,13 @@ jobs:
             --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
+          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
+            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIRS)
+            || '' }}
+          LIB: ${{ env.EXTRA_LIB_DIRS
+            && format('--extra-include-dirs={0}', env.EXTRA_LIB_DIRS) || '' }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
-          LIB: ${{ env.EXTRA_LIB_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_LIB_DIR) || '' }}
-          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS
-            && format('--extra-include-dirs={0}', env.EXTRA_INCLUDE_DIR)
-            || '' }}
         if: contains(matrix.os, 'windows') == false
 
       - name: Build on windows
