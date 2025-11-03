@@ -55,7 +55,7 @@ jobs:
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=--extra-include-dirs="${PREFIX}/include"
           EXTRA_LIB_DIRS=--extra-lib-dirs="${PREFIX}/lib"
-          } >> "$GITHUB_ENV"
+          EOF
 
       - uses: actions/checkout@v4
 
