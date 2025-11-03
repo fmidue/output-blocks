@@ -58,14 +58,8 @@ jobs:
           PREFIX="$(cygpath -m '/c/Program Files/OpenSSL')"
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=${PREFIX}/include/openssl
-          EXTRA_LIB_DIRS=${PREFIX}/lib
+          EXTRA_LIB_DIRS=C:/mingw64/opt/lib
           EOF
-          echo asn1.h
-          find /c -name asn1.h
-          echo libssl.a
-          find /c -name libssl.a
-          echo libcrypto.a
-          find /c -name libcrypto.a
 
       - uses: actions/checkout@v4
 
