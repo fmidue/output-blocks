@@ -43,8 +43,8 @@ jobs:
         run: |
           PREFIX="$(brew --prefix openssl)"
           cat <<EOF >> "$GITHUB_ENV"
-          EXTRA_INCLUDE_DIRS="${PREFIX}/include"
-          EXTRA_LIB_DIRS="${PREFIX}/lib"
+          EXTRA_INCLUDE_DIRS=${PREFIX}/include
+          EXTRA_LIB_DIRS=${PREFIX}/lib
           EOF
 
       - name: Set extra directories (Windows)
@@ -53,8 +53,8 @@ jobs:
         run: |
           PREFIX='C:/Program Files/OpenSSL-Win64'
           cat <<EOF >> "$GITHUB_ENV"
-          EXTRA_INCLUDE_DIRS="${PREFIX}/include"
-          EXTRA_LIB_DIRS="${PREFIX}/lib"
+          EXTRA_INCLUDE_DIRS=${PREFIX}/include
+          EXTRA_LIB_DIRS=${PREFIX}/lib
           EOF
 
       - uses: actions/checkout@v4
@@ -112,8 +112,8 @@ jobs:
           set -ex
           # shellcheck disable=SC2086
           stack --no-terminal --install-ghc $RES $YML \
-            ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs=$EXTRA_INCLUDE_DIRS} \
-            ${EXTRA_LIB_DIRS:+--extra-lib-dirs=$EXTRA_LIB_DIRS} \
+            ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs="$EXTRA_INCLUDE_DIRS"} \
+            ${EXTRA_LIB_DIRS:+--extra-lib-dirs="$EXTRA_LIB_DIRS"} \
             test --bench --only-dependencies
           set +ex
         env:
@@ -126,8 +126,8 @@ jobs:
           set -ex
           # shellcheck disable=SC2086
           stack --no-terminal --install-ghc $RES $YML \
-            ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs=$EXTRA_INCLUDE_DIRS} \
-            ${EXTRA_LIB_DIRS:+--extra-lib-dirs=$EXTRA_LIB_DIRS} \
+            ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs="$EXTRA_INCLUDE_DIRS"} \
+            ${EXTRA_LIB_DIRS:+--extra-lib-dirs="$EXTRA_LIB_DIRS"} \
             test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
