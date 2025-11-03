@@ -27,16 +27,19 @@ jobs:
             plan: {resolver: lts-19.33}
         include:
           - os: macOS-latest
-          - brew: pkg-config openssl
+            brew: openssl
+          - os: windows-latest
+            brew: openssl
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Install ${{ matrix.os }} Packages
-        uses: delgurth/get-package@v6.0.0
+        uses: amitie10g/install-package@v1.2.5
         with:
       #     apt-get: ${{ matrix.apt-get }}
           brew: ${{ matrix.brew }}
+          choco: ${{ matrix.choco }}
 
       - name: Set extra directories (macOS)
         if: runner.os == 'macOS'
@@ -51,7 +54,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX='C:/Program Files/OpenSSL-Win64'
+          PREFIX="$(ls -d 'C:/Program Files'/OpenSSL* 2>/dev/null | head -n 1)"
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=${PREFIX}/include
           EXTRA_LIB_DIRS=${PREFIX}/lib
