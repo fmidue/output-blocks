@@ -57,7 +57,7 @@ jobs:
         run: |
           PREFIX="$(cygpath -m '/c/Program Files/OpenSSL')"
           cat <<EOF >> "$GITHUB_ENV"
-          EXTRA_INCLUDE_DIRS=${PREFIX}/include/openssl
+          EXTRA_INCLUDE_DIRS=${PREFIX}/include
           EXTRA_LIB_DIRS=C:/mingw64/opt/lib
           EOF
 
