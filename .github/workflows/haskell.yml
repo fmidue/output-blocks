@@ -41,7 +41,8 @@ jobs:
         with:
       #     apt-get: ${{ matrix.apt-get }}
           brew: ${{ matrix.brew }}
-          pacman: ${{ matrix.choco }}
+          msystem: mingw64
+          pacman: ${{ matrix.pacman }}
 
       - name: Set extra directories (macOS)
         if: runner.os == 'macOS'
