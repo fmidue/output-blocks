@@ -51,7 +51,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX='C:/Program\ Files/OpenSSL-Win64'
+          PREFIX='C:/Program Files/OpenSSL-Win64'
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS="${PREFIX}/include"
           EXTRA_LIB_DIRS="${PREFIX}/lib"
@@ -117,8 +117,6 @@ jobs:
             test --bench --only-dependencies
           set +ex
         env:
-          EXTRA_INCLUDE_DIRS: ${{ env.EXTRA_INCLUDE_DIRS }}
-          EXTRA_LIB_DIRS: ${{ env.EXTRA_LIB_DIRS }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
@@ -133,8 +131,6 @@ jobs:
             test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
-          EXTRA_INCLUDE_DIRS: ${{ env.EXTRA_INCLUDE_DIRS }}
-          EXTRA_LIB_DIRS: ${{ env.EXTRA_LIB_DIRS }}
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
