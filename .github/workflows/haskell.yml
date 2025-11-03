@@ -29,9 +29,7 @@ jobs:
           - os: macOS-latest
             brew: openssl
           - os: windows-latest
-            pacman: >
-              mingw-w64-x86_64-pkg-config
-              mingw-w64-x86_64-openssl
+            choco: openssl
 
     runs-on: ${{ matrix.os }}
 
@@ -42,7 +40,7 @@ jobs:
       #     apt-get: ${{ matrix.apt-get }}
           brew: ${{ matrix.brew }}
           msystem: mingw64
-          pacman: ${{ matrix.pacman }}
+          choco: ${{ matrix.choco }}
 
       - name: Set extra directories (macOS)
         if: runner.os == 'macOS'
@@ -57,11 +55,17 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX="$(cygpath -m '/c/mingw64/opt')"
+          PREFIX="$(cygpath -m '/c/Program Files/OpenSSL')"
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=${PREFIX}/include/openssl
           EXTRA_LIB_DIRS=${PREFIX}/lib
           EOF
+          echo asn1.h
+          find /c -name asn1.h
+          echo libssl.a
+          find /c -name libssl.a
+          echo libcrypto.a
+          find /c -name libcrypto.a
 
       - uses: actions/checkout@v4
 
