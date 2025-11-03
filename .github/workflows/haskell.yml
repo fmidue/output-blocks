@@ -54,7 +54,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX="$(ls -d 'C:/Program Files'/OpenSSL* 2>/dev/null | head -n 1)"
+          PREFIX="$(find /c/Program\ Files/ -maxdepth 1 -type d -name 'OpenSSL*' | head -n1)""
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=${PREFIX}/include
           EXTRA_LIB_DIRS=${PREFIX}/lib
