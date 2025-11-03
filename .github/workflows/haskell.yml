@@ -51,7 +51,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX='C:/Program Files/OpenSSL-Win64'
+          PREFIX='C:/Program\ Files/OpenSSL-Win64'
           {
             echo "EXTRA_INCLUDE_DIRS=--extra-include-dirs=\"${PREFIX}/include\""
             echo "EXTRA_LIB_DIRS=--extra-lib-dirs=\"${PREFIX}/lib\""
