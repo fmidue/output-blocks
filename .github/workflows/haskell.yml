@@ -29,7 +29,9 @@ jobs:
           - os: macOS-latest
             brew: openssl
           - os: windows-latest
-            choco: openssl pkg-config
+            pacman: >
+              mingw-w64-x86_64-pkg-config
+              mingw-w64-x86_64-openssl
 
     runs-on: ${{ matrix.os }}
 
@@ -39,7 +41,7 @@ jobs:
         with:
       #     apt-get: ${{ matrix.apt-get }}
           brew: ${{ matrix.brew }}
-          choco: ${{ matrix.choco }}
+          pacman: ${{ matrix.choco }}
 
       - name: Set extra directories (macOS)
         if: runner.os == 'macOS'
@@ -54,7 +56,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX="$(find /c/Program\ Files/ -maxdepth 1 -type d -name 'OpenSSL*' | head -n1)"
+          PREFIX="C:/msys64/mingw64"
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=${PREFIX}/include
           EXTRA_LIB_DIRS=${PREFIX}/lib
