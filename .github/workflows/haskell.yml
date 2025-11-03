@@ -57,7 +57,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX="/c/mingw64/opt"
+          PREFIX="$(cygpath -m '/c/mingw64/opt')"
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=${PREFIX}/include/openssl
           EXTRA_LIB_DIRS=${PREFIX}/lib
