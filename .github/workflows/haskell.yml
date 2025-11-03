@@ -57,19 +57,11 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          PREFIX="C:/msys64/mingw64"
+          PREFIX="/mingw64"
           cat <<EOF >> "$GITHUB_ENV"
           EXTRA_INCLUDE_DIRS=${PREFIX}/include
           EXTRA_LIB_DIRS=${PREFIX}/lib
           EOF
-          echo /mingw64
-          ls /mingw64
-          echo C:
-          ls C:
-          echo C:/msys64
-          ls C:/msys64
-          echo C:/msys64/mingw64
-          ls C:/msys64/mingw64
 
       - uses: actions/checkout@v4
 
