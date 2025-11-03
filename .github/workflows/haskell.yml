@@ -52,9 +52,9 @@ jobs:
         shell: bash
         run: |
           PREFIX='C:/Program\ Files/OpenSSL-Win64'
-          {
-            echo "EXTRA_INCLUDE_DIRS=--extra-include-dirs=\"${PREFIX}/include\""
-            echo "EXTRA_LIB_DIRS=--extra-lib-dirs=\"${PREFIX}/lib\""
+          cat <<EOF >> "$GITHUB_ENV"
+          EXTRA_INCLUDE_DIRS=--extra-include-dirs="${PREFIX}/include"
+          EXTRA_LIB_DIRS=--extra-lib-dirs="${PREFIX}/lib"
           } >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
@@ -115,8 +115,8 @@ jobs:
             test --bench --only-dependencies
           set +ex
         env:
-          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS }}
-          LIB: ${{ env.EXTRA_LIB_DIRS }}
+          INCLUDE: "${{ env.EXTRA_INCLUDE_DIRS }}"
+          LIB: "${{ env.EXTRA_LIB_DIRS }}"
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
@@ -129,8 +129,8 @@ jobs:
             test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
-          INCLUDE: ${{ env.EXTRA_INCLUDE_DIRS }}
-          LIB: ${{ env.EXTRA_LIB_DIRS }}
+          INCLUDE: "${{ env.EXTRA_INCLUDE_DIRS }}"
+          LIB: "${{ env.EXTRA_LIB_DIRS }}"
           RES: "--resolver=${{ matrix.plan.resolver }}"
           YML: "${{ matrix.plan.stack-yaml }}"
 
