@@ -112,7 +112,7 @@ jobs:
           set -ex
           # shellcheck disable=SC2086
           stack --no-terminal --install-ghc $RES $YML \
-            ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs=$EXTRA_INCLUDE_DIRS" \
+            ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs=$EXTRA_INCLUDE_DIRS} \
             ${EXTRA_LIB_DIRS:+--extra-lib-dirs=$EXTRA_LIB_DIRS} \
             test --bench --only-dependencies
           set +ex
