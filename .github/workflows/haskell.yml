@@ -21,7 +21,7 @@ jobs:
           - {resolver: lts-22.44}
           - {resolver: lts-23.28}
           - {resolver: lts-24.17}
-          - {resolver: nightly, stack-yaml: '--stack-yaml=nightly-stack.yaml'}
+          - {resolver: nightly, stack-yaml: nightly-stack.yaml}
         exclude:
           - os: macOS-latest
             plan: {resolver: lts-19.33}
@@ -115,28 +115,32 @@ jobs:
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc $RES $YML \
+          stack --no-terminal --install-ghc \
             ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs="$EXTRA_INCLUDE_DIRS"} \
             ${EXTRA_LIB_DIRS:+--extra-lib-dirs="$EXTRA_LIB_DIRS"} \
+            ${RESOLVER:+--resolver="$RESOLVER"} \
+            ${STACK_YAML:+--stack-yaml="$STACK_YAML"} \
             test --bench --only-dependencies
           set +ex
         env:
-          RES: "--resolver=${{ matrix.plan.resolver }}"
-          YML: "${{ matrix.plan.stack-yaml }}"
+          RESOLVER: ${{ matrix.plan.resolver }}
+          STACK_YAML: ${{ matrix.plan.stack-yaml }}
 
       - name: Build and test
         shell: bash
         run: |
           set -ex
           # shellcheck disable=SC2086
-          stack --no-terminal --install-ghc $RES $YML \
+          stack --no-terminal --install-ghc \
             ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs="$EXTRA_INCLUDE_DIRS"} \
             ${EXTRA_LIB_DIRS:+--extra-lib-dirs="$EXTRA_LIB_DIRS"} \
+            ${RESOLVER:+--resolver="$RESOLVER"} \
+            ${STACK_YAML:+--stack-yaml="$STACK_YAML"} \
             test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
-          RES: "--resolver=${{ matrix.plan.resolver }}"
-          YML: "${{ matrix.plan.stack-yaml }}"
+          RESOLVER: ${{ matrix.plan.resolver }}
+          STACK_YAML: ${{ matrix.plan.stack-yaml }}
 
       - name: Cache ~/.stack
         uses: actions/cache/save@v4
