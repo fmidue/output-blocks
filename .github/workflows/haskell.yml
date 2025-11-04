@@ -119,12 +119,12 @@ jobs:
             ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs="$EXTRA_INCLUDE_DIRS"} \
             ${EXTRA_LIB_DIRS:+--extra-lib-dirs="$EXTRA_LIB_DIRS"} \
             ${RESOLVER:+--resolver="$RESOLVER"} \
-            ${STACK_YAML:+--stack-yaml="$STACK_YAML"} \
+            ${STACK_YML:+--stack-yaml="$STACK_YML"} \
             test --bench --only-dependencies
           set +ex
         env:
           RESOLVER: ${{ matrix.plan.resolver }}
-          STACK_YAML: ${{ matrix.plan.stack-yaml }}
+          STACK_YML: ${{ matrix.plan.stack-yaml }}
 
       - name: Build and test
         shell: bash
@@ -135,12 +135,12 @@ jobs:
             ${EXTRA_INCLUDE_DIRS:+--extra-include-dirs="$EXTRA_INCLUDE_DIRS"} \
             ${EXTRA_LIB_DIRS:+--extra-lib-dirs="$EXTRA_LIB_DIRS"} \
             ${RESOLVER:+--resolver="$RESOLVER"} \
-            ${STACK_YAML:+--stack-yaml="$STACK_YAML"} \
+            ${STACK_YML:+--stack-yaml="$STACK_YML"} \
             test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
           set +ex
         env:
           RESOLVER: ${{ matrix.plan.resolver }}
-          STACK_YAML: ${{ matrix.plan.stack-yaml }}
+          STACK_YML: ${{ matrix.plan.stack-yaml }}
 
       - name: Cache ~/.stack
         uses: actions/cache/save@v4
