@@ -268,6 +268,11 @@ extendedMultipleChoice
     madeUp = M.difference choices solution
     chosenTrue = M.intersection solution $ M.filter id choices
     isCorrect = M.null madeUp && and chosenTrue
+    theGrading = printSolutionAndAssertWithMinimum
+      minimumPoints
+      True
+      optionalSolution
+      $ gradeMultipleChoice punishment targeted solution choices
     correctnessCheck whatMap = yesNo isCorrect $ multiLang [
       (English, "All indicated " ++ localise English whatMap ++ " are correct?"),
       (German, "Alle angegebenen " ++ localise German whatMap ++ " sind korrekt?")
@@ -279,11 +284,6 @@ extendedMultipleChoice
       (English, "The indicated " ++ localise English whatMap ++ " are exhaustive?"),
       (German, "Die angegebenen " ++ localise German whatMap ++ " sind vollzählig?")
       ]
-    theGrading = printSolutionAndAssertWithMinimum
-      minimumPoints
-      True
-      optionalSolution
-      $ gradeMultipleChoice punishment targeted solution choices
 
 {-|
 Calculates points based on the portion of correct choices.
