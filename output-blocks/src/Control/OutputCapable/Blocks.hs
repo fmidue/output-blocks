@@ -261,6 +261,7 @@ extendedMultipleChoice
   *> exhaustivenessCheck
   *> printSolutionAndAssertMinimum
     minimumPoints
+    True
     optionalSolution
     points
   where
@@ -331,7 +332,10 @@ No points are distributed if not at least 50 percent are achieved.
 -}
 printSolutionAndAssert
   :: OutputCapable m
-  => Maybe (ArticleToUse, String)
+  => Bool
+  -- ^ whether to mention exhaustiveness
+  -- (use "correct and exhaustive" instead of just "correct" in output text)
+  -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
@@ -349,6 +353,9 @@ printSolutionAndAssertMinimum
   :: OutputCapable m
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
+  -> Bool
+  -- ^ whether to mention exhaustiveness
+  -- (use "correct and exhaustive" instead of just "correct" in output text)
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
@@ -357,6 +364,7 @@ printSolutionAndAssertMinimum
   -> Rated m
 printSolutionAndAssertMinimum
   minimumPoints
+  mentionExhaustiveness
   optionalSolution
   points
   = do
@@ -364,11 +372,19 @@ printSolutionAndAssertMinimum
     when (points /= 1) $ paragraph $ do
       translate $ case articleToUse of
         DefiniteArticle -> do
-          english "The correct solution is:"
-          german "Die korrekte Lösung ist:"
+          english $ if mentionExhaustiveness
+            then "The correct and exhaustive solution is:"
+            else "The correct solution is:"
+          german $ if mentionExhaustiveness
+            then "Die korrekte und vollzählige Lösung ist:"
+            else "Die korrekte Lösung ist:"
         IndefiniteArticle -> do
-          english "A correct solution is:"
-          german "Eine korrekte Lösung ist:"
+          english $ if mentionExhaustiveness
+            then "A correct and exhaustive solution is:"
+            else "A correct solution is:"
+          german $ if mentionExhaustiveness
+            then "Eine korrekte und vollzählige Lösung ist:"
+            else "Eine korrekte Lösung ist:"
       code solutionString
       pure ()
     )
@@ -412,7 +428,7 @@ singleChoice
   -> LangM m
 singleChoice what optionalSolution solution choice = void $
   checkCorrect
-  *> printSolutionAndAssert optionalSolution points
+  *> printSolutionAndAssert False optionalSolution points
   where
     correct = solution == choice
     points = if correct then 1 else 0
