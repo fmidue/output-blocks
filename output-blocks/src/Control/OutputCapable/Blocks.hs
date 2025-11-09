@@ -261,6 +261,7 @@ extendedMultipleChoice
   *> exhaustivenessCheck
   *> printSolutionAndAssertMinimum
     minimumPoints
+    True
     optionalSolution
     points
   where
@@ -338,7 +339,8 @@ printSolutionAndAssert
   -- ^ points achieved
   -> Rated m
 printSolutionAndAssert = printSolutionAndAssertMinimum
-  $ MinimumThreshold (1 % 2)
+  (MinimumThreshold (1 % 2))
+  False
 
 {-|
 Outputs the correct solution (if given)
@@ -349,6 +351,9 @@ printSolutionAndAssertMinimum
   :: OutputCapable m
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
+  -> Bool
+  -- ^ whether to require exhaustiveness
+  -- (use "correct and exhaustive" instead of just "correct" in output text)
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
@@ -357,6 +362,7 @@ printSolutionAndAssertMinimum
   -> Rated m
 printSolutionAndAssertMinimum
   minimumPoints
+  requireExhaustiveness
   optionalSolution
   points
   = do
@@ -364,11 +370,19 @@ printSolutionAndAssertMinimum
     when (points /= 1) $ paragraph $ do
       translate $ case articleToUse of
         DefiniteArticle -> do
-          english "The correct solution is:"
-          german "Die korrekte Lösung ist:"
+          english $ if requireExhaustiveness
+            then "The correct and exhaustive solution is:"
+            else "The correct solution is:"
+          german $ if requireExhaustiveness
+            then "Die korrekte und vollständige Lösung ist:"
+            else "Die korrekte Lösung ist:"
         IndefiniteArticle -> do
-          english "A correct solution is:"
-          german "Eine korrekte Lösung ist:"
+          english $ if requireExhaustiveness
+            then "A correct and exhaustive solution is:"
+            else "A correct solution is:"
+          german $ if requireExhaustiveness
+            then "Eine korrekte und vollständige Lösung ist:"
+            else "Eine korrekte Lösung ist:"
       code solutionString
       pure ()
     )
