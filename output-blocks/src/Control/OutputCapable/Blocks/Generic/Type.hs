@@ -147,7 +147,7 @@ toOutputCapable toOutputPart yesNoDisplay parts = for_ parts toInterface
       Itemized xs      -> itemizeM $ map toOutputCapable' xs
       Indented xs      -> indent $ toOutputCapable' xs
       Latex s          -> latex s
-      Folded b t c     -> collapsed b (put t) $ toOutputCapable' c
+      Folded b t c     -> collapsed b t $ toOutputCapable' c
       Code m           -> translateCode $ put m
       Translated m     -> translate $ put m
       Special element  -> toOutputPart element

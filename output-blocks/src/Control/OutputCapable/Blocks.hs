@@ -517,7 +517,7 @@ You should always prefer this version over the generic.
 collapsed
   :: GenericOutputCapable l m
   => Bool
-  -> State (Map l String) ()
+  -> Map l String
   -> GenericLangM l m ()
   -> GenericLangM l m ()
 collapsed = Generic.collapsed
