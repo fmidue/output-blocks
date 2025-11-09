@@ -332,15 +332,17 @@ No points are distributed if not at least 50 percent are achieved.
 -}
 printSolutionAndAssert
   :: OutputCapable m
-  => Maybe (ArticleToUse, String)
+  => Bool
+  -- ^ whether to mention exhaustiveness
+  -- (use "correct and exhaustive" instead of just "correct" in output text)
+  -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
   -> Rated m
 printSolutionAndAssert = printSolutionAndAssertMinimum
-  (MinimumThreshold (1 % 2))
-  False
+  $ MinimumThreshold (1 % 2)
 
 {-|
 Outputs the correct solution (if given)
@@ -426,7 +428,7 @@ singleChoice
   -> LangM m
 singleChoice what optionalSolution solution choice = void $
   checkCorrect
-  *> printSolutionAndAssert optionalSolution points
+  *> printSolutionAndAssert False optionalSolution points
   where
     correct = solution == choice
     points = if correct then 1 else 0
