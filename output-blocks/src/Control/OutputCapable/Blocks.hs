@@ -199,25 +199,23 @@ by rejecting correctness below 50 percent.
 -}
 multipleChoice
   :: (OutputCapable m, Ord a)
-  => ArticleToUse
-  -- ^ indicating if multiple different solutions could be possible
-  -> Map Language String
+  => Map Language String
   -- ^ what is asked for
-  -> Maybe String
-  -- ^ the correct solution to show
+  -> Maybe (ArticleToUse, String)
+  -- ^ the correct solution to show,
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Map a Bool
   -- ^ possible answers and if they are correct
   -> [a]
   -- ^ the submission to evaluate
   -> Rated m
-multipleChoice articleToUse what solutionString solution =
+multipleChoice what optionalSolution solution =
   extendedMultipleChoice
   (MinimumThreshold (1 % 2))
   (Punishment 0)
   (TargetedCorrect (length solution))
-  articleToUse
   what
-  solutionString
+  optionalSolution
   solution
   . foldr (`M.insert` True) (M.filter not solution)
 
@@ -241,12 +239,11 @@ extendedMultipleChoice
   -> TargetedCorrect
   -- ^ how many correct answers have to be given within the submission
   -- in order to achieve full points
-  -> ArticleToUse
-  -- ^ indicating if multiple different solutions could be possible
   -> Map Language String
   -- ^ what is asked for
-  -> Maybe String
-  -- ^ the correct solution to show
+  -> Maybe (ArticleToUse, String)
+  -- ^ the correct solution to show,
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Map a Bool
   -- ^ possible answers and if they are correct
   -> Map a Bool
@@ -256,17 +253,15 @@ extendedMultipleChoice
   minimumPoints
   punishment
   targeted
-  articleToUse
   what
-  optionalSolutionString
+  optionalSolution
   solution
   choices
   = correctnessCheck
   *> exhaustivenessCheck
   *> printSolutionAndAssertMinimum
     minimumPoints
-    articleToUse
-    optionalSolutionString
+    optionalSolution
     points
   where
     madeUp = M.difference choices solution
@@ -336,10 +331,9 @@ No points are distributed if not at least 50 percent are achieved.
 -}
 printSolutionAndAssert
   :: OutputCapable m
-  => ArticleToUse
-  -- ^ indicating if multiple different solutions could be possible
-  -> Maybe String
-  -- ^ the correct solution to show
+  => Maybe (ArticleToUse, String)
+  -- ^ the correct solution to show,
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
   -> Rated m
@@ -355,20 +349,18 @@ printSolutionAndAssertMinimum
   :: OutputCapable m
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
-  -> ArticleToUse
-  -- ^ indicating if multiple different solutions could be possible
-  -> Maybe String
-  -- ^ the correct solution to show
+  -> Maybe (ArticleToUse, String)
+  -- ^ the correct solution to show,
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
   -> Rated m
 printSolutionAndAssertMinimum
   minimumPoints
-  articleToUse
-  optionalSolutionString
+  optionalSolution
   points
   = do
-  for_ optionalSolutionString (\solutionString ->
+  for_ optionalSolution (\(articleToUse, solutionString) ->
     when (points /= 1) $ paragraph $ do
       translate $ case articleToUse of
         DefiniteArticle -> do
@@ -408,24 +400,23 @@ Outputs feedback and rates a single choice submission.
 -}
 singleChoice
   :: (OutputCapable m, Eq a)
-  => ArticleToUse
-  -- ^ indicating if multiple different solutions could be possible
-  -> Map Language String
+  => Map Language String
   -- ^ what is asked for
-  -> Maybe String
-  -- ^ the correct solution to show
+  -> Maybe (ArticleToUse, String)
+  -- ^ the correct solution to show,
+  -- and the article kind indicating if multiple different solutions could be possible
   -> a
   -- ^ the correct answer
   -> a
   -- ^ the submission to evaluate
   -> LangM m
-singleChoice articleToUse what optionalSolutionString solution choice = void $
+singleChoice what optionalSolution solution choice = void $
   checkCorrect
-  *> printSolutionAndAssert articleToUse optionalSolutionString points
+  *> printSolutionAndAssert optionalSolution points
   where
     correct = solution == choice
     points = if correct then 1 else 0
-    assert = continueOrAbort $ isJust optionalSolutionString
+    assert = continueOrAbort $ isJust optionalSolution
     checkCorrect = assert correct $ multiLang [
       (English, "Chosen " ++ localise English what ++ " is correct?"),
       (German, "Der/die/das gewählte " ++ localise German what ++ " ist korrekt?")]
