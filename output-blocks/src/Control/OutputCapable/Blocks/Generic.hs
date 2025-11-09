@@ -298,10 +298,10 @@ mapToMatching l = fromMaybe "" . flip M.lookup l
 collapsed
   :: GenericOutputCapable language m
   => Bool
-  -> State (Map language String) a1
+  -> Map language String
   -> GenericLangM language m ()
   -> GenericLangM language m ()
-collapsed b t = folded b (mapToMatching $ translations t)
+collapsed b = folded b . mapToMatching
 
 {-|
 Provided a neutral element and a function to combine generated output

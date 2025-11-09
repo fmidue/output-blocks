@@ -510,14 +510,13 @@ translations :: State (Map l a) () -> Map l a
 translations = Generic.translations
 
 {-|
-This is a more specific version of 'Generic.collapsed'
-which enforces the usage pattern.
+This is a more specific version of 'Generic.collapsed'.
 You should always prefer this version over the generic.
 -}
 collapsed
   :: GenericOutputCapable l m
   => Bool
-  -> State (Map l String) ()
+  -> Map l String
   -> GenericLangM l m ()
   -> GenericLangM l m ()
 collapsed = Generic.collapsed
