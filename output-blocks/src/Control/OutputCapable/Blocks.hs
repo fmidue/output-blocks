@@ -203,7 +203,7 @@ multipleChoice
   -- ^ what is asked for
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
-  -- and an article indicating if multiple different solutions could be possible
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Map a Bool
   -- ^ possible answers and if they are correct
   -> [a]
@@ -243,7 +243,7 @@ extendedMultipleChoice
   -- ^ what is asked for
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
-  -- and an article indicating if multiple different solutions could be possible
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Map a Bool
   -- ^ possible answers and if they are correct
   -> Map a Bool
@@ -333,7 +333,7 @@ printSolutionAndAssert
   :: OutputCapable m
   => Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
-  -- and an article indicating if multiple different solutions could be possible
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
   -> Rated m
@@ -351,7 +351,7 @@ printSolutionAndAssertMinimum
   -- ^ the minimum threshold of achieved points
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
-  -- and an article indicating if multiple different solutions could be possible
+  -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
   -> Rated m
@@ -404,7 +404,7 @@ singleChoice
   -- ^ what is asked for
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
-  -- and an article indicating if multiple different solutions could be possible
+  -- and the article kind indicating if multiple different solutions could be possible
   -> a
   -- ^ the correct answer
   -> a
