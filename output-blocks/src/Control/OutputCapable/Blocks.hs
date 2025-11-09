@@ -214,7 +214,7 @@ multipleChoice what optionalSolution solution =
   (MinimumThreshold (1 % 2))
   (Punishment 0)
   (TargetedCorrect (length solution))
-  what
+  (Just what)
   optionalSolution
   solution
   . foldr (`M.insert` True) (M.filter not solution)
@@ -239,8 +239,8 @@ extendedMultipleChoice
   -> TargetedCorrect
   -- ^ how many correct answers have to be given within the submission
   -- in order to achieve full points
-  -> Map Language String
-  -- ^ what is asked for
+  -> Maybe (Map Language String)
+  -- ^ what is asked for (Nothing suppresses correctness and exhaustiveness checking output)
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
@@ -257,28 +257,32 @@ extendedMultipleChoice
   optionalSolution
   solution
   choices
-  = correctnessCheck
-  *> exhaustivenessCheck
-  *> printSolutionAndAssertWithMinimum
-    minimumPoints
-    True
-    optionalSolution
-    points
+  = case what of
+      Nothing ->
+        theGrading
+      Just things ->
+        correctnessCheck things
+        *> exhaustivenessCheck things
+        *> theGrading
   where
     madeUp = M.difference choices solution
     chosenTrue = M.intersection solution $ M.filter id choices
     isCorrect = M.null madeUp && and chosenTrue
-    points = gradeMultipleChoice punishment targeted solution choices
-    correctnessCheck = yesNo isCorrect $ multiLang [
-      (English, "All indicated " ++ localise English what ++ " are correct?"),
-      (German, "Alle angegebenen " ++ localise German what ++ " sind korrekt?")
+    theGrading = printSolutionAndAssertWithMinimum
+      minimumPoints
+      True
+      optionalSolution
+      $ gradeMultipleChoice punishment targeted solution choices
+    correctnessCheck things = yesNo isCorrect $ multiLang [
+      (English, "All indicated " ++ localise English things ++ " are correct?"),
+      (German, "Alle angegebenen " ++ localise German things ++ " sind korrekt?")
       ]
     answers = M.intersectionWith (==) solution choices
     isComplete = and answers && length answers >= unTargetedCorrect targeted
-    exhaustivenessCheck = when isCorrect
+    exhaustivenessCheck things = when isCorrect
       $ yesNo isComplete $ multiLang [
-      (English, "The indicated " ++ localise English what ++ " are exhaustive?"),
-      (German, "Die angegebenen " ++ localise German what ++ " sind vollzählig?")
+      (English, "The indicated " ++ localise English things ++ " are exhaustive?"),
+      (German, "Die angegebenen " ++ localise German things ++ " sind vollzählig?")
       ]
 
 {-|
