@@ -260,9 +260,9 @@ extendedMultipleChoice
   = case what of
       Nothing ->
         theGrading
-      Just whatMap ->
-        correctnessCheck whatMap
-        *> exhaustivenessCheck whatMap
+      Just things ->
+        correctnessCheck things
+        *> exhaustivenessCheck things
         *> theGrading
   where
     madeUp = M.difference choices solution
@@ -273,16 +273,16 @@ extendedMultipleChoice
       True
       optionalSolution
       $ gradeMultipleChoice punishment targeted solution choices
-    correctnessCheck whatMap = yesNo isCorrect $ multiLang [
-      (English, "All indicated " ++ localise English whatMap ++ " are correct?"),
-      (German, "Alle angegebenen " ++ localise German whatMap ++ " sind korrekt?")
+    correctnessCheck things = yesNo isCorrect $ multiLang [
+      (English, "All indicated " ++ localise English things ++ " are correct?"),
+      (German, "Alle angegebenen " ++ localise German things ++ " sind korrekt?")
       ]
     answers = M.intersectionWith (==) solution choices
     isComplete = and answers && length answers >= unTargetedCorrect targeted
-    exhaustivenessCheck whatMap = when isCorrect
+    exhaustivenessCheck things = when isCorrect
       $ yesNo isComplete $ multiLang [
-      (English, "The indicated " ++ localise English whatMap ++ " are exhaustive?"),
-      (German, "Die angegebenen " ++ localise German whatMap ++ " sind vollzählig?")
+      (English, "The indicated " ++ localise English things ++ " are exhaustive?"),
+      (German, "Die angegebenen " ++ localise German things ++ " sind vollzählig?")
       ]
 
 {-|
