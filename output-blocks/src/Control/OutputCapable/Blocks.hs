@@ -240,7 +240,7 @@ extendedMultipleChoice
   -- ^ how many correct answers have to be given within the submission
   -- in order to achieve full points
   -> Maybe (Map Language String)
-  -- ^ what is asked for (Nothing suppresses output of correctness and exhaustiveness check)
+  -- ^ what is asked for (Nothing suppresses correctness and exhaustiveness checking output)
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
@@ -258,21 +258,12 @@ extendedMultipleChoice
   solution
   choices
   = case what of
-      Nothing -> printSolutionAndAssertWithMinimum
-        minimumPoints
-        True
-        optionalSolution
-        (gradeMultipleChoice punishment targeted solution choices)
-      Just whatMap -> correctnessCheck whatMap
+      Nothing ->
+        theGrading
+      Just whatMap ->
+        correctnessCheck whatMap
         *> exhaustivenessCheck whatMap
-        *> extendedMultipleChoice
-          minimumPoints
-          punishment
-          targeted
-          Nothing
-          optionalSolution
-          solution
-          choices
+        *> theGrading
   where
     madeUp = M.difference choices solution
     chosenTrue = M.intersection solution $ M.filter id choices
@@ -288,6 +279,11 @@ extendedMultipleChoice
       (English, "The indicated " ++ localise English whatMap ++ " are exhaustive?"),
       (German, "Die angegebenen " ++ localise German whatMap ++ " sind vollzählig?")
       ]
+    theGrading = printSolutionAndAssertWithMinimum
+      minimumPoints
+      True
+      optionalSolution
+      $ gradeMultipleChoice punishment targeted solution choices
 
 {-|
 Calculates points based on the portion of correct choices.
