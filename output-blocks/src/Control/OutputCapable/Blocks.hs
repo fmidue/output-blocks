@@ -62,7 +62,7 @@ module Control.OutputCapable.Blocks (
   multipleChoice,
   multipleChoiceSyntax,
   printSolutionAndAssert,
-  printSolutionAndAssertMinimum,
+  printSolutionAndAssertWithMinimum,
   reRefuse,
   reRefuseLangM,
   singleChoice,
@@ -259,7 +259,7 @@ extendedMultipleChoice
   choices
   = correctnessCheck
   *> exhaustivenessCheck
-  *> printSolutionAndAssertMinimum
+  *> printSolutionAndAssertWithMinimum
     minimumPoints
     True
     optionalSolution
@@ -328,7 +328,7 @@ data ArticleToUse
 Outputs the correct solution (if given)
 when achieved points are less than 100 percent.
 No points are distributed if not at least 50 percent are achieved.
-(see 'printSolutionAndAssertMinimum')
+(see 'printSolutionAndAssertWithMinimum')
 -}
 printSolutionAndAssert
   :: OutputCapable m
@@ -341,7 +341,7 @@ printSolutionAndAssert
   -> Rational
   -- ^ points achieved
   -> Rated m
-printSolutionAndAssert = printSolutionAndAssertMinimum
+printSolutionAndAssert = printSolutionAndAssertWithMinimum
   $ MinimumThreshold (1 % 2)
 
 {-|
@@ -349,7 +349,7 @@ Outputs the correct solution (if given)
 when achieved points are less than 100 percent.
 No points are distributed if they do not reach the minimum threshold.
 -}
-printSolutionAndAssertMinimum
+printSolutionAndAssertWithMinimum
   :: OutputCapable m
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
@@ -362,7 +362,7 @@ printSolutionAndAssertMinimum
   -> Rational
   -- ^ points achieved
   -> Rated m
-printSolutionAndAssertMinimum
+printSolutionAndAssertWithMinimum
   minimumPoints
   mentionExhaustiveness
   optionalSolution
