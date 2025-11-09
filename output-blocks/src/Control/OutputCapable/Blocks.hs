@@ -240,7 +240,7 @@ extendedMultipleChoice
   -- ^ how many correct answers have to be given within the submission
   -- in order to achieve full points
   -> Maybe (Map Language String)
-  -- ^ what is asked for (Nothing suppresses correctnessCheck and exhaustivenessCheck)
+  -- ^ what is asked for (Nothing suppresses output of correctness and exhaustiveness check)
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
@@ -262,7 +262,7 @@ extendedMultipleChoice
         minimumPoints
         True
         optionalSolution
-        points
+        (gradeMultipleChoice punishment targeted solution choices)
       Just whatMap -> correctnessCheck whatMap
         *> exhaustivenessCheck whatMap
         *> extendedMultipleChoice
@@ -277,7 +277,6 @@ extendedMultipleChoice
     madeUp = M.difference choices solution
     chosenTrue = M.intersection solution $ M.filter id choices
     isCorrect = M.null madeUp && and chosenTrue
-    points = gradeMultipleChoice punishment targeted solution choices
     correctnessCheck whatMap = yesNo isCorrect $ multiLang [
       (English, "All indicated " ++ localise English whatMap ++ " are correct?"),
       (German, "Alle angegebenen " ++ localise German whatMap ++ " sind korrekt?")
