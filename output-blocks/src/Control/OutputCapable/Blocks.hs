@@ -374,14 +374,14 @@ printSolutionAndAssertMinimum
             then "The correct and exhaustive solution is:"
             else "The correct solution is:"
           german $ if mentionExhaustiveness
-            then "Die korrekte und vollständige Lösung ist:"
+            then "Die korrekte und vollzählige Lösung ist:"
             else "Die korrekte Lösung ist:"
         IndefiniteArticle -> do
           english $ if mentionExhaustiveness
             then "A correct and exhaustive solution is:"
             else "A correct solution is:"
           german $ if mentionExhaustiveness
-            then "Eine korrekte und vollständige Lösung ist:"
+            then "Eine korrekte und vollzählige Lösung ist:"
             else "Eine korrekte Lösung ist:"
       code solutionString
       pure ()
