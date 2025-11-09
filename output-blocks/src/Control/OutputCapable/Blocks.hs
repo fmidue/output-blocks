@@ -352,7 +352,7 @@ printSolutionAndAssertMinimum
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
   -> Bool
-  -- ^ whether to require exhaustiveness
+  -- ^ whether to mention exhaustiveness
   -- (use "correct and exhaustive" instead of just "correct" in output text)
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
@@ -362,7 +362,7 @@ printSolutionAndAssertMinimum
   -> Rated m
 printSolutionAndAssertMinimum
   minimumPoints
-  requireExhaustiveness
+  mentionExhaustiveness
   optionalSolution
   points
   = do
@@ -370,17 +370,17 @@ printSolutionAndAssertMinimum
     when (points /= 1) $ paragraph $ do
       translate $ case articleToUse of
         DefiniteArticle -> do
-          english $ if requireExhaustiveness
+          english $ if mentionExhaustiveness
             then "The correct and exhaustive solution is:"
             else "The correct solution is:"
-          german $ if requireExhaustiveness
+          german $ if mentionExhaustiveness
             then "Die korrekte und vollständige Lösung ist:"
             else "Die korrekte Lösung ist:"
         IndefiniteArticle -> do
-          english $ if requireExhaustiveness
+          english $ if mentionExhaustiveness
             then "A correct and exhaustive solution is:"
             else "A correct solution is:"
-          german $ if requireExhaustiveness
+          german $ if mentionExhaustiveness
             then "Eine korrekte und vollständige Lösung ist:"
             else "Eine korrekte Lösung ist:"
       code solutionString
