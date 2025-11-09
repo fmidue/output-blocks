@@ -265,11 +265,14 @@ extendedMultipleChoice
         points
       Just whatMap -> correctnessCheck whatMap
         *> exhaustivenessCheck whatMap
-        *> printSolutionAndAssertWithMinimum
+        *> extendedMultipleChoice
           minimumPoints
-          True
+          punishment
+          targeted
+          Nothing
           optionalSolution
-          points
+          solution
+          choices
   where
     madeUp = M.difference choices solution
     chosenTrue = M.intersection solution $ M.filter id choices
