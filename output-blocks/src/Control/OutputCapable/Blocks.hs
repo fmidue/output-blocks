@@ -53,7 +53,11 @@ module Control.OutputCapable.Blocks (
   translate,
   translateCode,
   translations,
-  -- * Helper functions
+  -- * Helpers
+  -- ** Additional Text
+  ExtraText (..),
+  extra,
+  -- * Other helpers
   MinimumThreshold (..),
   Punishment (..),
   TargetedCorrect (..),
@@ -88,6 +92,7 @@ import Autolib.Hash                     (Hashable)
 import Autolib.Reader                   (Reader)
 import Autolib.ToDoc                    (ToDoc)
 import Control.Functor.Trans            (FunctorTrans (lift))
+import Control.Monad.State              (put)
 import Control.OutputCapable.Blocks.Generic (
   GenericLangM (..),
   GenericOutputCapable (..),
@@ -653,3 +658,33 @@ toAbort
   => GenericLangM l (GenericReportT l o m) ()
   -> GenericLangM l (GenericReportT l o m) ()
 toAbort = Generic.toAbort
+
+-- | Configuration options for additional text
+data ExtraText
+  = NoExtraText
+  -- ^ Provide no additional text.
+  | Static
+  -- ^ Provide additional text that is always shown.
+      !(Map Language String)
+      -- ^ The text do be displayed.
+  | Collapsible
+  -- ^ Provide additional text that can be collapsed.
+      !Bool
+      -- ^ The default collapse status of the text.
+      !(Map Language String)
+      -- ^ The description of the text to be shown.
+      !(Map Language String)
+      -- ^ The text to be shown when not collapsed.
+  deriving (Data, Eq, Read, Show)
+
+{-|
+Render extra text as paragraph.
+-}
+extra :: OutputCapable m => ExtraText -> LangM m
+extra NoExtraText = pure ()
+extra (Static textMap) = paragraph $ translate $ put textMap
+extra (Collapsible defaultState titleText contentText) =
+  collapsed
+    defaultState
+    titleText
+    (translate $ put contentText)
