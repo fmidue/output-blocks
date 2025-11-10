@@ -259,18 +259,18 @@ extendedMultipleChoice
   choices
   = case what of
       Nothing ->
-        theGrading
+        theGrading False
       Just things ->
         correctnessCheck things
         *> exhaustivenessCheck things
-        *> theGrading
+        *> theGrading True
   where
     madeUp = M.difference choices solution
     chosenTrue = M.intersection solution $ M.filter id choices
     isCorrect = M.null madeUp && and chosenTrue
-    theGrading = printSolutionAndAssertWithMinimum
+    theGrading mentionExhaustiveness = printSolutionAndAssertWithMinimum
       minimumPoints
-      True
+      mentionExhaustiveness
       optionalSolution
       $ gradeMultipleChoice punishment targeted solution choices
     correctnessCheck things = yesNo isCorrect $ multiLang [
