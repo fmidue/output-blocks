@@ -675,7 +675,7 @@ data ExtraText
       -- ^ The description of the text to be shown.
       !(Map Language String)
       -- ^ The text to be shown when not collapsed.
-  deriving (Data, Eq, Read, Show)
+  deriving (Data, Eq, Generic, Hashable, Read, Reader, Show, ToDoc)
 
 {-|
 Render extra text as paragraph.
