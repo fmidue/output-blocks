@@ -275,8 +275,8 @@ extendedMultipleChoice
     isCorrect = M.null madeUp && and chosenTrue
     theGrading mentionExhaustiveness = printSolutionAndAssertWithMinimum
       minimumPoints
-      mentionExhaustiveness
-      optionalSolution
+      (fmap (\(articleToUse, solutionString) ->
+        (mentionExhaustiveness, articleToUse, solutionString)) optionalSolution)
       $ gradeMultipleChoice punishment targeted solution choices
     correctnessCheck things = yesNo isCorrect $ multiLang [
       (English, "All indicated " ++ localise English things ++ " are correct?"),
@@ -341,11 +341,10 @@ No points are distributed if not at least 50 percent are achieved.
 -}
 printSolutionAndAssert
   :: OutputCapable m
-  => Bool
-  -- ^ whether to mention exhaustiveness
+  => Maybe (Bool, ArticleToUse, String)
+  -- ^ potentially the correct solution to show,
+  -- along with whether to mention exhaustiveness
   -- (use "correct and exhaustive" instead of just "correct" in output text)
-  -> Maybe (ArticleToUse, String)
-  -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
@@ -362,22 +361,20 @@ printSolutionAndAssertWithMinimum
   :: OutputCapable m
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
-  -> Bool
-  -- ^ whether to mention exhaustiveness
+  -> Maybe (Bool, ArticleToUse, String)
+  -- ^ potentially the correct solution to show,
+  -- along with whether to mention exhaustiveness
   -- (use "correct and exhaustive" instead of just "correct" in output text)
-  -> Maybe (ArticleToUse, String)
-  -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
   -> Rated m
 printSolutionAndAssertWithMinimum
   minimumPoints
-  mentionExhaustiveness
   optionalSolution
   points
   = do
-  for_ optionalSolution (\(articleToUse, solutionString) ->
+  for_ optionalSolution (\(mentionExhaustiveness, articleToUse, solutionString) ->
     when (points /= 1) $ paragraph $ do
       translate $ case articleToUse of
         DefiniteArticle -> do
@@ -437,7 +434,10 @@ singleChoice
   -> LangM m
 singleChoice what optionalSolution solution choice = void $
   checkCorrect
-  *> printSolutionAndAssert False optionalSolution points
+  *> printSolutionAndAssert
+    (fmap (\(articleToUse, solutionString) ->
+      (False, articleToUse, solutionString)) optionalSolution)
+    points
   where
     correct = solution == choice
     points = if correct then 1 else 0

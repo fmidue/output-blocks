@@ -1,6 +1,6 @@
 ---
 name: output-blocks
-version: 0.5.0.1
+version: 0.6.0.0
 extra-source-files: [ ]
 build-tools: [ ]
 ghc-options:
