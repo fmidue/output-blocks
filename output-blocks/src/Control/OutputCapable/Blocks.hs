@@ -342,9 +342,9 @@ No points are distributed if not at least 50 percent are achieved.
 printSolutionAndAssert
   :: OutputCapable m
   => Maybe (Bool, ArticleToUse, String)
-  -- ^ the correct solution to show,
-  -- whether to mention exhaustiveness
-  -- (use "correct and exhaustive" instead of just "correct" in output text),
+  -- ^ potentially the correct solution to show,
+  -- along with whether to mention exhaustiveness
+  -- (use "correct and exhaustive" instead of just "correct" in output text)
   -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
@@ -362,9 +362,9 @@ printSolutionAndAssertWithMinimum
   => MinimumThreshold
   -- ^ the minimum threshold of achieved points
   -> Maybe (Bool, ArticleToUse, String)
-  -- ^ the correct solution to show,
-  -- whether to mention exhaustiveness
-  -- (use "correct and exhaustive" instead of just "correct" in output text),
+  -- ^ potentially the correct solution to show,
+  -- along with whether to mention exhaustiveness
+  -- (use "correct and exhaustive" instead of just "correct" in output text)
   -- and the article kind indicating if multiple different solutions could be possible
   -> Rational
   -- ^ points achieved
