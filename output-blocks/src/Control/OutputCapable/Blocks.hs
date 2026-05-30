@@ -204,8 +204,8 @@ by rejecting correctness below 50 percent.
 -}
 multipleChoice
   :: (OutputCapable m, Ord a)
-  => Map Language String
-  -- ^ what is asked for
+  => Maybe (Map Language String)
+  -- ^ what is asked for (Nothing suppresses correctness and exhaustiveness checking output)
   -> Maybe (ArticleToUse, String)
   -- ^ the correct solution to show,
   -- and the article kind indicating if multiple different solutions could be possible
@@ -219,7 +219,7 @@ multipleChoice what optionalSolution solution =
   (MinimumThreshold (1 % 2))
   (Punishment 0)
   (TargetedCorrect (length solution))
-  (Just what)
+  what
   optionalSolution
   solution
   . foldr (`M.insert` True) (M.filter not solution)
