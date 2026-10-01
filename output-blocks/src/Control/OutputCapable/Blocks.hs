@@ -92,7 +92,6 @@ import Autolib.Hash                     (Hashable)
 import Autolib.Reader                   (Reader)
 import Autolib.ToDoc                    (ToDoc)
 import Control.Functor.Trans            (FunctorTrans (lift))
-import Control.Monad.State              (put)
 import Control.OutputCapable.Blocks.Generic (
   GenericLangM (..),
   GenericOutputCapable (..),
@@ -121,7 +120,7 @@ import Control.OutputCapable.Blocks.Report (
 
 import Control.Applicative              (Alternative)
 import Control.Monad                    (unless, void, when)
-import Control.Monad.State              (State, modify)
+import Control.Monad.State              (State, modify, put)
 import Control.Monad.Writer (
   MonadWriter (tell),
   )
@@ -661,9 +660,7 @@ toAbort = Generic.toAbort
 
 -- | Configuration options for additional text
 data ExtraText
-  = NoExtraText
-  -- ^ Provide no additional text.
-  | Static
+  = Static
   -- ^ Provide additional text that is always shown.
       !(Map Language String)
       -- ^ The text do be displayed.
@@ -678,13 +675,15 @@ data ExtraText
   deriving (Data, Eq, Generic, Hashable, Read, Reader, Show, ToDoc)
 
 {-|
-Render extra text as paragraph.
+Render each extra text in sequence.
+An empty list renders nothing.
 -}
-extra :: OutputCapable m => ExtraText -> LangM m
-extra NoExtraText = pure ()
-extra (Static textMap) = paragraph $ translate $ put textMap
-extra (Collapsible defaultState titleText contentText) =
-  collapsed
-    defaultState
-    titleText
-    (translate $ put contentText)
+extra :: OutputCapable m => [ExtraText] -> LangM m
+extra = traverse_ singleExtra
+  where
+    singleExtra (Static textMap) = paragraph $ translate $ put textMap
+    singleExtra (Collapsible defaultState titleText contentText) =
+      collapsed
+        defaultState
+        titleText
+        (translate $ put contentText)
